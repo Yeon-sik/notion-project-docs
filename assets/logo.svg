@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Notion Project Docs</title>
+  <desc id="desc">A verified project document on a blue background.</desc>
+  <rect width="512" height="512" rx="112" fill="#2563EB"/>
+  <path d="M142 92h172l72 72v256H142z" fill="#fff"/>
+  <path d="M314 92v80h72" fill="#BFDBFE"/>
+  <path d="M198 228h132M198 284h132M198 340h76" fill="none" stroke="#2563EB" stroke-linecap="round" stroke-width="24"/>
+  <circle cx="354" cy="354" r="72" fill="#0F172A"/>
+  <path d="m322 354 21 21 45-48" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="22"/>
+</svg>

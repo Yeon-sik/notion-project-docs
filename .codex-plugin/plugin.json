@@ -1,0 +1,43 @@
+{
+  "name": "notion-project-docs",
+  "version": "0.2.0",
+  "description": "Create evidence-grounded project documentation and publish reviewed Git Markdown to dedicated Notion mirror pages by an explicit repository policy.",
+  "author": {
+    "name": "Yeon-sik",
+    "url": "https://github.com/Yeon-sik"
+  },
+  "homepage": "https://github.com/Yeon-sik/notion-project-docs",
+  "repository": "https://github.com/Yeon-sik/notion-project-docs",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "documentation",
+    "github-actions",
+    "notion",
+    "portfolio"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Notion Project Docs",
+    "shortDescription": "Evidence-based docs with policy-driven Notion publishing.",
+    "longDescription": "Create portfolio-ready project overviews and technical case studies from repository evidence, validate publishable Markdown, and install a guarded GitHub Actions workflow with manual-by-default or explicit canonical-branch Notion publishing.",
+    "developerName": "Yeon-sik",
+    "category": "Productivity",
+    "capabilities": [
+      "Documentation",
+      "Validation",
+      "Automation"
+    ],
+    "websiteURL": "https://github.com/Yeon-sik/notion-project-docs",
+    "privacyPolicyURL": "https://github.com/Yeon-sik/notion-project-docs/blob/main/PRIVACY.md",
+    "termsOfServiceURL": "https://github.com/Yeon-sik/notion-project-docs/blob/main/TERMS.md",
+    "brandColor": "#2563EB",
+    "composerIcon": "./assets/icon.svg",
+    "logo": "./assets/logo.svg",
+    "defaultPrompt": [
+      "Audit this repository and create evidence-based project docs.",
+      "Install guarded Git-to-Notion documentation automation.",
+      "Validate the configured docs without publishing them."
+    ]
+  }
+}

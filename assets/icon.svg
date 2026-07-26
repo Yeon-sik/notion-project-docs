@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Notion Project Docs</title>
+  <rect width="64" height="64" rx="14" fill="#2563EB"/>
+  <path d="M18 13h21l9 9v29H18z" fill="#fff"/>
+  <path d="M39 13v10h9" fill="#BFDBFE"/>
+  <path d="M25 30h16M25 37h16M25 44h10" fill="none" stroke="#2563EB" stroke-linecap="round" stroke-width="3"/>
+  <circle cx="45" cy="45" r="8" fill="#0F172A"/>
+  <path d="m41.5 45 2.2 2.2 4.8-5" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"/>
+</svg>
