@@ -4,11 +4,18 @@ A skills-only Codex plugin that turns repository evidence into reviewable
 project documentation and mirrors approved Git Markdown to dedicated Notion
 pages.
 
-> Release status: source-complete release candidate. It has not been pushed to
-> a standalone GitHub repository or submitted to the universal Plugins
-> Directory.
+> Release status: v0.2.0 is published in this public GitHub repository. It is
+> not submitted to the universal Plugins Directory.
 
 [한국어 안내](./README.ko.md)
+
+## Start here
+
+If you are new to Codex, Notion integrations, or GitHub Actions, follow the
+[beginner installation and usage guide (Korean)](./docs/BEGINNER_GUIDE.ko.md)
+before installing or configuring this plugin. It covers installation, Notion
+and GitHub connection, safe first publication, everyday prompts, and common
+problems.
 
 ## Why this exists
 
@@ -64,19 +71,10 @@ protected-environment approval. Repositories may explicitly choose
 
 ## Install the plugin
 
-After public release, install `Notion Project Docs` from the universal Plugins
-Directory.
-
-For source testing before release:
-
-1. Clone this repository.
-2. Add the plugin root to a local marketplace using `$plugin-creator`.
-3. Install it from the local Plugins Directory.
-4. Start a new task and invoke `$maintain-project-docs`.
-
-Users who only need the skill can install
-`skills/maintain-project-docs` from the GitHub repository with
-`$skill-installer`.
+This public repository can be used as a skill source. Ask Codex to install
+`skills/maintain-project-docs` from `Yeon-sik/notion-project-docs`, then start
+a new task and invoke `$maintain-project-docs`. The
+[beginner guide](./docs/BEGINNER_GUIDE.ko.md) gives the exact beginner flow.
 
 ## Set up a target repository
 
