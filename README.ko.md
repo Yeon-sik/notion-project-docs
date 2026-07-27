@@ -22,6 +22,8 @@ Codex 스킬·Notion integration·GitHub Actions가 처음이라면 설치와 �
 - Git Markdown을 진실 원천으로 유지
 - Notion을 수동 편집 원본이 아닌 승인된 읽기용 미러로 사용
 - 여러 프로젝트와 문서 이름을 JSON 설정으로 재사용
+- 토큰과 부모 페이지 URL만 받는 로컬 Setup Wizard로 Notion 미러 페이지와
+  GitHub Environment Secret을 자동 구성
 
 ## 안전한 공개 흐름
 
@@ -60,7 +62,19 @@ node skills\maintain-project-docs\scripts\install-project-docs.mjs `
 파일이 다르면 덮어쓰지 않고 전체 사전 점검 단계에서 중단합니다.
 
 이후 `$maintain-project-docs`로 설정된 문서를 작성하고, 다음 GitHub
-Environment Secret을 구성합니다.
+Environment Secret을 구성합니다. 직접 GitHub Settings에서 입력하는 대신
+Notion integration을 연결한 부모 페이지 하나를 만든 뒤 다음 Wizard를 실행할
+수 있습니다.
+
+```powershell
+Set-Location C:\path\to\repository
+node "$env:USERPROFILE\.codex\skills\maintain-project-docs\scripts\setup-project-docs.mjs"
+```
+
+브라우저가 열리면 Notion integration token과 부모 페이지 URL만 입력합니다.
+Wizard가 문서별 전용 하위 페이지를 만들고, 기준 브랜치로 제한된 GitHub
+Environment와 아래 두 Secret을 구성합니다. 토큰과 페이지 ID 매핑은 저장소,
+브라우저 저장소, 명령행 인수에 기록하지 않습니다.
 
 - `NOTION_TOKEN`: Notion integration token
 - `NOTION_PAGE_IDS_JSON`: 문서 키와 전용 Notion 페이지 ID의 JSON 매핑

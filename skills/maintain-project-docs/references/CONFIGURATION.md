@@ -28,6 +28,32 @@ Supported options:
 The installer never overwrites a differing file. A conflict stops the whole
 preflight before any new file is written.
 
+## One-time connection wizard
+
+After the runtime is installed and reviewed, create one Notion parent page and
+connect an internal Notion integration to it. From the target repository root,
+invoke the installed skill script:
+
+```text
+node <skill-directory>/scripts/setup-project-docs.mjs
+```
+
+The command opens an ephemeral browser UI on a random `127.0.0.1` port. It
+reads the installed configuration and workflow, creates one dedicated Notion
+child page per configured document, configures the protected GitHub
+environment, and stores `NOTION_TOKEN` plus `NOTION_PAGE_IDS_JSON`.
+Use `--target <repository>` only when the current working directory is not the
+target repository.
+
+On rerun, it reuses an exact `[Git Mirror] <document label>` child only when
+the page is blank or contains a publisher source fingerprint. Duplicate names
+or non-mirror content stop setup before that page is reused.
+
+The wizard requires GitHub CLI authentication and repository administration
+permission. It does not write credentials or page IDs to the target
+repository, command arguments, logs, browser storage, or a hosted service.
+Use `--no-open` when the local URL should only be printed.
+
 ## Configuration file
 
 `project-docs.config.json` is the target repository's canonical document map:

@@ -61,6 +61,9 @@ protected-environment approval. Repositories may explicitly choose
 - English and Korean portfolio templates;
 - a versioned JSON configuration contract for one to twenty documents;
 - a non-overwriting repository installer with a dry-run default;
+- a local, one-time setup wizard that creates dedicated Notion mirror pages
+  and configures protected GitHub environment secrets without persisting
+  credentials;
 - a dependency-free validator for structure, placeholders, links, local paths,
   and common credential formats;
 - a deterministic Notion Markdown publisher with full-page preflight,
@@ -92,22 +95,33 @@ node skills/maintain-project-docs/scripts/install-project-docs.mjs \
 After reviewing the plan, add `--apply`. Differing existing files stop the
 installation before any new file is written.
 
-Then:
+Then create one Notion parent page, connect the internal Notion integration to
+that page, and run the local setup wizard:
+
+```bash
+cd /path/to/repository
+node /path/to/maintain-project-docs/scripts/setup-project-docs.mjs
+```
+
+The wizard opens a loopback-only browser page. Paste the integration token and
+the connected parent page URL. It creates or safely reuses one dedicated child
+page per configured document, restricts the protected environment to the
+canonical branch, configures the current GitHub user as reviewer in `manual`
+mode, and stores `NOTION_TOKEN` plus `NOTION_PAGE_IDS_JSON` through GitHub CLI stdin.
+No token or page map is written to the repository or browser storage.
+
+After setup:
 
 1. Use `$maintain-project-docs` to create the configured Markdown files.
 2. Review and commit the documents, configuration, runtime, templates, and
    workflow together.
-3. Create the protected GitHub environment named during installation and
-   restrict it to the canonical branch.
-4. Add `NOTION_TOKEN`.
-5. Add `NOTION_PAGE_IDS_JSON`, mapping each configured document key to one
-   dedicated Notion page ID.
-6. Grant the Notion integration read-content and update-content access to every
-   mirror page.
-7. For `manual`, add a required reviewer, run `operation: validate`, then
-   publish with `operation: publish` and confirmation `PUBLISH`.
-8. For `on-main-push`, omit required reviewers and merge a reviewed document
-   change to the canonical branch; the workflow publishes automatically.
+3. For `manual`, run `operation: validate`, then publish with
+   `operation: publish`, confirmation `PUBLISH`, and environment approval.
+4. For `on-main-push`, merge a reviewed document change to the canonical
+   branch; the workflow publishes automatically.
+
+Manual GitHub and Notion configuration remains documented in the operations
+runbook for environments where GitHub CLI or browser launch is unavailable.
 
 See [the configuration reference](./skills/maintain-project-docs/references/CONFIGURATION.md)
 and [operations runbook](./skills/maintain-project-docs/references/OPERATIONS.md).

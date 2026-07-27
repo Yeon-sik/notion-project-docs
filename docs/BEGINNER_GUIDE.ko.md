@@ -82,6 +82,25 @@ docs/templates/                          문서 시작용 템플릿
 
 ## 4. Notion 연결하기
 
+### 가장 간단한 연결 방법
+
+Notion integration을 만든 뒤 프로젝트 문서 미러를 담을 부모 페이지 하나에
+integration을 연결합니다. 개별 미러 페이지를 만들거나 페이지 ID를 복사하지
+말고 다음 Setup Wizard를 실행합니다.
+
+```powershell
+Set-Location C:\path\to\your-repository
+node "$env:USERPROFILE\.codex\skills\maintain-project-docs\scripts\setup-project-docs.mjs"
+```
+
+열린 브라우저에서 integration token과 부모 페이지 URL을 입력하면 Wizard가
+문서별 전용 미러 페이지, GitHub Environment, 기준 브랜치 제한,
+`NOTION_TOKEN`, `NOTION_PAGE_IDS_JSON`을 구성합니다. `manual` 모드에서는 현재
+GitHub 사용자를 required reviewer로 지정합니다.
+
+GitHub CLI 로그인이 만료됐다면 화면의 **GitHub 로그인/갱신**을 먼저
+실행합니다. Wizard를 사용할 수 없는 환경에서는 아래 수동 절차를 따릅니다.
+
 ### 4-1. Notion integration 만들기
 
 Notion의 Integrations 관리 화면에서 새 internal integration을 만들고, 문서
