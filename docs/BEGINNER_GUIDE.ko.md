@@ -96,7 +96,9 @@ node "$env:USERPROFILE\.codex\skills\maintain-project-docs\scripts\setup-project
 열린 브라우저에서 integration token과 부모 페이지 URL을 입력하면 Wizard가
 문서별 전용 미러 페이지, GitHub Environment, 기준 브랜치 제한,
 `NOTION_TOKEN`, `NOTION_PAGE_IDS_JSON`을 구성합니다. `manual` 모드에서는 현재
-GitHub 사용자를 required reviewer로 지정합니다.
+GitHub 사용자를 required reviewer로 지정합니다. 저장소와 GitHub 요금제가 이를
+지원하지 않아 전용 HTTP 422를 반환하면 reviewer 없이 다시 구성하고 완료 화면에
+보호 수준 경고를 표시합니다.
 
 GitHub CLI 로그인이 만료됐다면 화면의 **GitHub 로그인/갱신**을 먼저
 실행합니다. Wizard를 사용할 수 없는 환경에서는 아래 수동 절차를 따릅니다.
@@ -145,7 +147,7 @@ GitHub Actions가 해당 페이지를 읽거나 수정할 수 없습니다.
 
 | 모드 | 추천 대상 | Notion이 갱신되는 시점 | Environment 설정 |
 | --- | --- | --- | --- |
-| `manual` | 처음 사용하는 사람 | Actions에서 `PUBLISH`를 입력해 수동 실행할 때 | required reviewer 설정 |
+| `manual` | 처음 사용하는 사람 | Actions에서 `PUBLISH`를 입력해 수동 실행할 때 | 지원 시 required reviewer 설정, 미지원 시 경고 |
 | `on-main-push` | PR 검토가 정착된 팀·개인 | 문서 변경이 `main`에 병합될 때 | required reviewer 없이 `main` 제한 유지 |
 
 처음에는 다음처럼 둡니다.
@@ -172,7 +174,7 @@ GitHub Actions가 해당 페이지를 읽거나 수정할 수 없습니다.
 2. 성공하면 다시 실행합니다.
 3. `operation`을 `publish`로 선택합니다.
 4. `confirmation`에 대문자 `PUBLISH`를 정확히 입력합니다.
-5. `manual` 모드라면 Environment 승인을 완료합니다.
+5. `manual` 모드에서 required reviewer가 구성됐다면 Environment 승인을 완료합니다.
 
 작업이 성공하면 대상 Notion 페이지마다 Git 원본 링크와 source fingerprint가
 상단에 표시됩니다.

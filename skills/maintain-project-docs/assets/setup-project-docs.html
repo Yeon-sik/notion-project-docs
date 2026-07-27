@@ -192,6 +192,20 @@
         display: block;
       }
 
+      #result-warning {
+        display: none;
+        margin-top: 14px;
+        padding: 12px 14px;
+        border: 1px solid #d8a928;
+        border-radius: 10px;
+        background: #fff8df;
+        color: #6f4b00;
+      }
+
+      #result-warning.visible {
+        display: block;
+      }
+
       a {
         color: #1b5dab;
       }
@@ -296,7 +310,8 @@
             <input id="acknowledge" name="acknowledge" type="checkbox" required />
             <span>
               전용 GitHub Environment의 reviewer와 배포 브랜치 정책을 현재 설정에 맞게 구성하고,
-              기존의 다른 배포 브랜치 정책은 제거하는 데 동의합니다.
+              기존의 다른 배포 브랜치 정책은 제거하는 데 동의합니다. 현재 요금제가 required
+              reviewer를 지원하지 않으면 reviewer 없이 구성되며 완료 화면에 경고가 표시됩니다.
             </span>
           </label>
         </section>
@@ -311,6 +326,7 @@
       <section id="result" aria-labelledby="result-heading">
         <h2 id="result-heading">설정 완료</h2>
         <p id="result-summary"></p>
+        <p id="result-warning" role="alert"></p>
         <ul id="result-pages"></ul>
       </section>
     </main>
@@ -389,6 +405,16 @@
           document.querySelector("#result-summary").textContent =
             `${result.github.nameWithOwner}의 ${result.environment.environmentName} Environment에 ` +
             `${result.secrets.secretNames.join(", ")}을 등록했습니다.`;
+          const resultWarning = document.querySelector("#result-warning");
+          resultWarning.classList.remove("visible");
+          resultWarning.textContent = "";
+          if (result.environment.reviewerProtection === "unsupported-by-plan") {
+            resultWarning.textContent =
+              "현재 GitHub 요금제에서는 이 저장소의 required reviewer를 지원하지 않아 " +
+              "reviewer 없이 구성했습니다. 수동 발행은 정확한 PUBLISH 확인을 계속 요구하지만 " +
+              "별도의 Environment 승인 단계는 없습니다.";
+            resultWarning.classList.add("visible");
+          }
           const pageList = document.querySelector("#result-pages");
           pageList.replaceChildren();
           for (const page of result.notion.pages) {

@@ -54,6 +54,14 @@ permission. It does not write credentials or page IDs to the target
 repository, command arguments, logs, browser storage, or a hosted service.
 Use `--no-open` when the local URL should only be printed.
 
+GitHub Free, Pro, and Team plans expose required reviewers only for public
+repositories. If GitHub returns the specific plan-limit HTTP 422 while
+configuring a manual-mode reviewer, the wizard retries the Environment without
+a reviewer and displays a reduced-protection warning. The exact `PUBLISH`
+confirmation and canonical-branch restriction remain in force, but there is no
+separate Environment approval. Private repositories must still use a plan that
+supports Environment secrets.
+
 ## Configuration file
 
 `project-docs.config.json` is the target repository's canonical document map:

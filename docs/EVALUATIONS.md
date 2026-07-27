@@ -111,6 +111,8 @@ Expected:
 - Creates one dedicated child page per configured document.
 - Sends both GitHub secrets through stdin and never writes credentials or page
   IDs to the repository, logs, command arguments, or browser storage.
+- Retries without a reviewer only for GitHub's specific required-reviewer plan
+  HTTP 422 and displays a reduced-protection warning.
 - Preserves page mappings in memory for a same-session retry and safely
   discovers blank or fingerprinted `[Git Mirror]` pages after a process restart.
 

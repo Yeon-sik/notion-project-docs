@@ -225,7 +225,7 @@ test("GitHub provisioning restricts the environment and sends secrets only throu
   };
 
   const repository = await discoverGitHubRepository({ cwd: "C:\\repo", run });
-  await configureGitHubEnvironment({
+  const environment = await configureGitHubEnvironment({
     cwd: "C:\\repo",
     repository: repository.nameWithOwner,
     environmentName: "notion-docs-production",
@@ -250,6 +250,8 @@ test("GitHub provisioning restricts the environment and sends secrets only throu
   );
   const environmentBody = JSON.parse(environmentCall.input);
   assert.deepEqual(environmentBody.reviewers, [{ type: "User", id: 42 }]);
+  assert.equal(environment.reviewer, "owner");
+  assert.equal(environment.reviewerProtection, "required");
   assert.deepEqual(environmentBody.deployment_branch_policy, {
     protected_branches: false,
     custom_branch_policies: true,
@@ -275,6 +277,84 @@ test("GitHub provisioning restricts the environment and sends secrets only throu
   assert.ok(secretCalls.every((call) => !call.args.join(" ").includes(pageIdsJson)));
   assert.equal(secretCalls[0].input, notionToken);
   assert.equal(secretCalls[1].input, pageIdsJson);
+});
+
+test("GitHub provisioning falls back when the plan rejects required reviewers", async () => {
+  const environmentBodies = [];
+  const run = async (_command, args, options = {}) => {
+    const joined = args.join(" ");
+    if (joined.includes("--method PUT") && joined.includes("/environments/")) {
+      const body = JSON.parse(options.input);
+      environmentBodies.push(body);
+      if (body.reviewers.length > 0) {
+        throw new Error(
+          "gh api failed with exit code 1: Failed to create the environment protection rule. " +
+            "Please ensure the billing plan supports the required reviewers protection rule. " +
+            "(HTTP 422)",
+        );
+      }
+      return {
+        stdout: JSON.stringify({ name: "notion-docs-production" }),
+        stderr: "",
+      };
+    }
+    if (
+      joined.startsWith("api repos/owner/repository/environments/") &&
+      joined.endsWith("/deployment-branch-policies")
+    ) {
+      return {
+        stdout: JSON.stringify({ branch_policies: [] }),
+        stderr: "",
+      };
+    }
+    if (joined.includes("--method POST") && joined.includes("deployment-branch-policies")) {
+      return { stdout: JSON.stringify({ id: 12, name: "main" }), stderr: "" };
+    }
+    return { stdout: "", stderr: "" };
+  };
+
+  const environment = await configureGitHubEnvironment({
+    cwd: "C:\\repo",
+    repository: "owner/repository",
+    environmentName: "notion-docs-production",
+    canonicalBranch: "main",
+    publicationMode: "manual",
+    currentUser: { id: 42, login: "owner" },
+    run,
+  });
+
+  assert.equal(environmentBodies.length, 2);
+  assert.deepEqual(environmentBodies[0].reviewers, [{ type: "User", id: 42 }]);
+  assert.deepEqual(environmentBodies[1].reviewers, []);
+  assert.equal(environment.reviewer, "");
+  assert.equal(environment.reviewerProtection, "unsupported-by-plan");
+});
+
+test("GitHub provisioning does not hide unrelated environment errors", async () => {
+  let putCount = 0;
+  const run = async (_command, args) => {
+    const joined = args.join(" ");
+    if (joined.includes("--method PUT") && joined.includes("/environments/")) {
+      putCount += 1;
+      throw new Error("gh api failed with exit code 1: Validation failed (HTTP 422)");
+    }
+    return { stdout: "", stderr: "" };
+  };
+
+  await assert.rejects(
+    () =>
+      configureGitHubEnvironment({
+        cwd: "C:\\repo",
+        repository: "owner/repository",
+        environmentName: "notion-docs-production",
+        canonicalBranch: "main",
+        publicationMode: "manual",
+        currentUser: { id: 42, login: "owner" },
+        run,
+      }),
+    /could not configure the protected environment/,
+  );
+  assert.equal(putCount, 1);
 });
 
 test("Setup context reads the pinned workflow environment", () => {
