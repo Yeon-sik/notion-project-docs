@@ -33,7 +33,8 @@ Codex 스킬·Notion integration·GitHub Actions가 처음이라면 설치와 �
 1. 사용자가 GitHub Actions의 수동 실행을 시작합니다.
 2. 작업을 `publish`로 선택합니다.
 3. 확인란에 정확히 `PUBLISH`를 입력합니다.
-4. 보호된 GitHub Environment의 승인을 통과합니다.
+4. 저장소와 요금제가 required reviewer를 지원하면 보호된 GitHub
+   Environment의 승인을 통과합니다.
 5. 실행 브랜치가 설정된 기준 브랜치와 일치합니다.
 6. 모든 Notion 대상 페이지의 읽기 사전 점검이 성공합니다.
 
@@ -85,7 +86,10 @@ Environment와 아래 두 Secret을 구성합니다. 토큰과 페이지 ID 매�
 {"intro":"11111111111111111111111111111111","detail":"22222222222222222222222222222222"}
 ```
 
-`manual` 모드는 Environment required reviewer를 사용합니다.
+`manual` 모드는 GitHub 저장소와 요금제가 지원할 때 Environment required
+reviewer를 사용합니다. GitHub가 요금제 제한 HTTP 422를 반환하면 Wizard는
+reviewer 없이 다시 구성하고 보호 수준이 낮아졌다는 경고를 완료 화면에 표시합니다.
+이 경우에도 정확한 `PUBLISH` 확인은 유지되지만 별도 Environment 승인은 없습니다.
 `on-main-push` 모드는 자동 발행을 위해 required reviewer를 두지 않고
 배포 브랜치를 `main`으로 제한합니다. 수동 `PUBLISH` 실행은 복구 경로로
 계속 사용할 수 있습니다.

@@ -26,9 +26,11 @@ branches to the configured canonical branch.
 
 `publicationMode` controls how a validated canonical revision is published.
 
-- `manual` is the default. Configure a required reviewer. Publication requires
-  `workflow_dispatch`, `operation=publish`, the exact `PUBLISH` confirmation,
-  environment approval, and the configured canonical branch.
+- `manual` is the default. Configure a required reviewer when the repository
+  and GitHub plan support it. Publication always requires `workflow_dispatch`,
+  `operation=publish`, the exact `PUBLISH` confirmation, and the configured
+  canonical branch. It additionally requires environment approval when a
+  reviewer is configured.
 - `on-main-push` is opt-in. Do not configure a required reviewer, because that
   would make every automatic run wait for manual approval. A matching push or
   merge to the configured canonical branch publishes after validation. The
@@ -42,6 +44,14 @@ branch policies with the configured canonical branch, and uses the current
 GitHub user as the required reviewer in `manual` mode. In `on-main-push` mode,
 it removes required reviewers so canonical pushes do not wait for approval.
 Review the displayed target before accepting this policy change.
+
+GitHub Free, Pro, and Team plans support required reviewers only for public
+repositories. When GitHub returns the specific billing-plan HTTP 422, the
+wizard retries without a reviewer and reports the reduced protection on the
+completion screen. Do not interpret a successful fallback as an approved
+deployment: the exact `PUBLISH` guard remains, but the separate Environment
+approval does not. Private repositories still require a plan with Environment
+secret support.
 
 ## Secrets
 
@@ -69,8 +79,8 @@ runtime behavior.
 1. Review the Notion pages and ensure they contain no manual child content.
 2. Merge the complete runtime and documents to the canonical branch.
 3. Confirm the validation job passes.
-4. For `manual`, dispatch `validate`, then dispatch `publish`, enter `PUBLISH`,
-   and approve the environment.
+4. For `manual`, dispatch `validate`, then dispatch `publish` and enter
+   `PUBLISH`. Approve the environment when a required reviewer is configured.
 5. For `on-main-push`, confirm that the merge-triggered publish job completes
    without an approval wait.
 6. Review the Actions summary, both Notion pages, source revision links, and

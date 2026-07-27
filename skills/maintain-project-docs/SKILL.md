@@ -79,7 +79,10 @@ or changing the runtime bundle.
 - Keep `publicationMode` at the safe `manual` default unless the repository
   owner explicitly chooses `on-main-push`.
 - In `manual` mode, require `workflow_dispatch`, the exact `PUBLISH`
-  confirmation, and protected-environment approval.
+  confirmation, and protected-environment approval when required reviewers are
+  available for the repository and GitHub plan. If GitHub returns its specific
+  plan-limit 422 for required reviewers, continue without a reviewer only after
+  the wizard's policy acknowledgement and report the reduced protection.
 - In `on-main-push` mode, publish automatically only after a matching change is
   pushed or merged to the canonical branch. Keep the GitHub environment,
   secrets, and branch restriction, but do not configure a required reviewer

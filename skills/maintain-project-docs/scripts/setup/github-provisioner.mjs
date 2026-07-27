@@ -1,6 +1,8 @@
 import { spawn } from "node:child_process";
 
 const REQUIRED_SECRET_NAMES = ["NOTION_TOKEN", "NOTION_PAGE_IDS_JSON"];
+const REQUIRED_REVIEWER_PLAN_ERROR =
+  /(?:billing plan supports the required reviewers protection rule|required reviewers?.*only available|HTTP 422)/i;
 
 function commandError(command, args, code, stderr) {
   const detail = stderr.trim().slice(0, 1_000);
@@ -71,6 +73,14 @@ function environmentEndpoint(repository, environmentName, suffix = "") {
 async function ghJson(run, args, { cwd, input, label }) {
   const result = await run("gh", args, { cwd, input });
   return parseJsonOutput(result, label);
+}
+
+function requiredReviewerIsUnsupported(error) {
+  return (
+    error instanceof Error &&
+    REQUIRED_REVIEWER_PLAN_ERROR.test(error.message) &&
+    /required reviewers?/i.test(error.message)
+  );
 }
 
 export async function loginToGitHub({ cwd, run = runCommand } = {}) {
@@ -169,6 +179,8 @@ export async function configureGitHubEnvironment({
       custom_branch_policies: true,
     },
   };
+  let reviewerProtection =
+    publicationMode === "manual" ? "required" : "not-requested";
 
   try {
     await ghJson(run, ["api", "--method", "PUT", endpoint, "--input", "-"], {
@@ -177,11 +189,29 @@ export async function configureGitHubEnvironment({
       label: "GitHub environment configuration",
     });
   } catch (error) {
-    const wrapped = new Error(
-      `GitHub could not configure the protected environment. Confirm repository administration permission and plan support. ${error.message}`,
-    );
-    wrapped.cause = error;
-    throw wrapped;
+    if (publicationMode === "manual" && requiredReviewerIsUnsupported(error)) {
+      body.reviewers = [];
+      try {
+        await ghJson(run, ["api", "--method", "PUT", endpoint, "--input", "-"], {
+          cwd,
+          input: JSON.stringify(body),
+          label: "GitHub environment configuration without a required reviewer",
+        });
+        reviewerProtection = "unsupported-by-plan";
+      } catch (fallbackError) {
+        const wrapped = new Error(
+          `GitHub rejected both the required-reviewer policy and the compatible fallback. Confirm repository administration permission and private-repository Environment support. ${fallbackError.message}`,
+        );
+        wrapped.cause = fallbackError;
+        throw wrapped;
+      }
+    } else {
+      const wrapped = new Error(
+        `GitHub could not configure the protected environment. Confirm repository administration permission and plan support. ${error.message}`,
+      );
+      wrapped.cause = error;
+      throw wrapped;
+    }
   }
 
   const policiesEndpoint = environmentEndpoint(
@@ -224,7 +254,8 @@ export async function configureGitHubEnvironment({
 
   return {
     environmentName,
-    reviewer: publicationMode === "manual" ? currentUser.login : "",
+    reviewer: reviewerProtection === "required" ? currentUser.login : "",
+    reviewerProtection,
   };
 }
 

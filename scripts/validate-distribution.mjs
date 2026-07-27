@@ -144,6 +144,11 @@ assert(
   "Setup secrets must be passed to GitHub CLI through stdin.",
 );
 assert(
+  githubProvisioner.includes('"unsupported-by-plan"') &&
+    setupHtml.includes('result.environment.reviewerProtection === "unsupported-by-plan"'),
+  "Setup wizard must report the required-reviewer plan fallback visibly.",
+);
+assert(
   !/\b(?:localStorage|sessionStorage)\b/.test(setupHtml),
   "Setup UI must not persist credentials in browser storage.",
 );

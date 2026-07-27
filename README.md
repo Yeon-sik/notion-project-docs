@@ -41,7 +41,7 @@ flowchart LR
   B --> C["Reviewed Git Markdown"]
   C --> D["Validation and render dry run"]
   D --> E{"publicationMode"}
-  E -->|"manual"| F["PUBLISH confirmation and approval"]
+  E -->|"manual"| F["PUBLISH confirmation; approval when supported"]
   E -->|"on-main-push"| G["Canonical branch push"]
   F --> H{"Protected GitHub environment"}
   G --> H
@@ -51,9 +51,10 @@ flowchart LR
 
 No Notion write occurs on pull requests, non-canonical pushes, local dry runs,
 or ordinary skill use. The default `manual` mode requires workflow dispatch,
-the exact `PUBLISH` confirmation, the configured canonical branch, and
-protected-environment approval. Repositories may explicitly choose
-`on-main-push` to publish matching canonical-branch merges automatically.
+the exact `PUBLISH` confirmation and the configured canonical branch. It also
+uses protected-environment approval when the repository and GitHub plan support
+required reviewers. Repositories may explicitly choose `on-main-push` to
+publish matching canonical-branch merges automatically.
 
 ## What is included
 
@@ -107,8 +108,11 @@ The wizard opens a loopback-only browser page. Paste the integration token and
 the connected parent page URL. It creates or safely reuses one dedicated child
 page per configured document, restricts the protected environment to the
 canonical branch, configures the current GitHub user as reviewer in `manual`
-mode, and stores `NOTION_TOKEN` plus `NOTION_PAGE_IDS_JSON` through GitHub CLI stdin.
-No token or page map is written to the repository or browser storage.
+mode when the repository plan supports required reviewers, and stores
+`NOTION_TOKEN` plus `NOTION_PAGE_IDS_JSON` through GitHub CLI stdin. When GitHub
+rejects required reviewers with its plan-specific HTTP 422 response, the wizard
+retries without a reviewer and shows a reduced-protection warning. No token or
+page map is written to the repository or browser storage.
 
 After setup:
 
@@ -116,7 +120,8 @@ After setup:
 2. Review and commit the documents, configuration, runtime, templates, and
    workflow together.
 3. For `manual`, run `operation: validate`, then publish with
-   `operation: publish`, confirmation `PUBLISH`, and environment approval.
+   `operation: publish` and confirmation `PUBLISH`. Approve the environment
+   when required reviewers are supported and configured.
 4. For `on-main-push`, merge a reviewed document change to the canonical
    branch; the workflow publishes automatically.
 
