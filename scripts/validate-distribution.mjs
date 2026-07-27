@@ -22,11 +22,16 @@ const REQUIRED_FILES = [
   "docs/RELEASE_CHECKLIST.md",
   "skills/maintain-project-docs/SKILL.md",
   "skills/maintain-project-docs/agents/openai.yaml",
+  "skills/maintain-project-docs/assets/setup-project-docs.html",
   "skills/maintain-project-docs/references/CONFIGURATION.md",
   "skills/maintain-project-docs/references/EVIDENCE_MODEL.md",
   "skills/maintain-project-docs/references/OPERATIONS.md",
   "skills/maintain-project-docs/scripts/install-project-docs.mjs",
   "skills/maintain-project-docs/scripts/project-docs-config.mjs",
+  "skills/maintain-project-docs/scripts/setup/github-provisioner.mjs",
+  "skills/maintain-project-docs/scripts/setup/notion-provisioner.mjs",
+  "skills/maintain-project-docs/scripts/setup/project-docs-setup.mjs",
+  "skills/maintain-project-docs/scripts/setup-project-docs.mjs",
   "skills/maintain-project-docs/scripts/sync-project-docs-to-notion.mjs",
   "skills/maintain-project-docs/scripts/validate-project-docs.mjs",
 ];
@@ -102,6 +107,45 @@ assert(
   workflowTemplate.includes("workflow_dispatch:") &&
     workflowTemplate.includes("inputs.confirmation == 'PUBLISH'"),
   "Workflow template must keep the manual publication gate.",
+);
+assert(
+  workflowTemplate.includes("github.ref == needs.validate.outputs.canonical_ref") &&
+    !workflowTemplate.includes("github.ref == 'refs/heads/main'"),
+  "Workflow template must enforce the configured canonical branch.",
+);
+
+const setupScript = readFileSync(
+  path.join(ROOT, "skills", "maintain-project-docs", "scripts", "setup-project-docs.mjs"),
+  "utf8",
+);
+const githubProvisioner = readFileSync(
+  path.join(
+    ROOT,
+    "skills",
+    "maintain-project-docs",
+    "scripts",
+    "setup",
+    "github-provisioner.mjs",
+  ),
+  "utf8",
+);
+const setupHtml = readFileSync(
+  path.join(ROOT, "skills", "maintain-project-docs", "assets", "setup-project-docs.html"),
+  "utf8",
+);
+assert(
+  setupScript.includes('server.listen(0, "127.0.0.1"') &&
+    setupScript.includes("request.headers.origin !== expectedOrigin"),
+  "Setup wizard must remain loopback-only with strict origin checks.",
+);
+assert(
+  !githubProvisioner.includes('"--body"') &&
+    githubProvisioner.includes("input: value"),
+  "Setup secrets must be passed to GitHub CLI through stdin.",
+);
+assert(
+  !/\b(?:localStorage|sessionStorage)\b/.test(setupHtml),
+  "Setup UI must not persist credentials in browser storage.",
 );
 
 const textFiles = collectFiles(ROOT).filter(

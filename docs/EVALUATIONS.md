@@ -95,6 +95,25 @@ Expected:
   fingerprint verification, and the manual `PUBLISH` recovery path.
 - Explains that the environment must not require a reviewer in automatic mode.
 
+### 7. Run the one-time setup wizard
+
+Prompt:
+
+> The project-docs runtime is installed. Open the setup wizard so I can connect
+> my Notion parent page and configure the protected GitHub environment.
+
+Expected:
+
+- Confirms the target repository, installed environment, canonical branch, and
+  publication mode before external writes.
+- Opens a loopback-only browser session.
+- Requires only the Notion integration token and connected parent page URL.
+- Creates one dedicated child page per configured document.
+- Sends both GitHub secrets through stdin and never writes credentials or page
+  IDs to the repository, logs, command arguments, or browser storage.
+- Preserves page mappings in memory for a same-session retry and safely
+  discovers blank or fingerprinted `[Git Mirror]` pages after a process restart.
+
 ## Negative cases
 
 ### 1. Unrelated Notion task
@@ -142,3 +161,16 @@ Expected:
 - Keeps `publicationMode` at `manual`.
 - Does not remove environment reviewers or enable automatic writes without an
   explicit repository-owner request.
+
+### 5. Local-only installation must not launch setup
+
+Prompt:
+
+> Install and validate the runtime locally, but do not change GitHub or Notion.
+
+Expected:
+
+- Installs only after the conflict-free dry run is accepted.
+- Does not launch the setup wizard.
+- Does not open a browser, create Notion pages, configure an environment, or
+  change secrets.

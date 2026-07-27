@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Notion Project Docs 설정</title>
+    <style nonce="__CSP_NONCE__">
+      :root {
+        color-scheme: light;
+        font-family:
+          Inter, Pretendard, "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        color: #171717;
+        background: #f4f1eb;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        padding: 32px 16px;
+      }
+
+      main {
+        width: min(760px, 100%);
+        margin: 0 auto;
+        background: #fff;
+        border: 1px solid #d8d2c8;
+        border-radius: 18px;
+        box-shadow: 0 20px 55px rgb(35 30 20 / 10%);
+        overflow: hidden;
+      }
+
+      header {
+        padding: 28px 30px 22px;
+        border-bottom: 1px solid #e8e3da;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: clamp(24px, 5vw, 34px);
+        letter-spacing: -0.035em;
+      }
+
+      h2 {
+        margin: 0 0 14px;
+        font-size: 17px;
+      }
+
+      p {
+        margin: 0;
+        line-height: 1.6;
+        color: #5b554d;
+      }
+
+      section {
+        padding: 24px 30px;
+        border-bottom: 1px solid #eee9e1;
+      }
+
+      dl {
+        display: grid;
+        grid-template-columns: 150px 1fr;
+        gap: 9px 16px;
+        margin: 0;
+      }
+
+      dt {
+        color: #756e64;
+      }
+
+      dd {
+        margin: 0;
+        font-weight: 650;
+        overflow-wrap: anywhere;
+      }
+
+      ul {
+        margin: 0;
+        padding-left: 22px;
+      }
+
+      li + li {
+        margin-top: 6px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 18px;
+        font-weight: 700;
+      }
+
+      label span {
+        display: block;
+        margin-top: 6px;
+        font-size: 13px;
+        font-weight: 400;
+        line-height: 1.5;
+        color: #746d63;
+      }
+
+      input[type="password"],
+      input[type="url"],
+      input[type="text"] {
+        width: 100%;
+        margin-top: 8px;
+        padding: 13px 14px;
+        border: 1px solid #bdb5aa;
+        border-radius: 10px;
+        background: #fff;
+        color: #171717;
+        font: inherit;
+      }
+
+      input:focus {
+        border-color: #171717;
+        outline: 3px solid rgb(23 23 23 / 12%);
+      }
+
+      .acknowledgement {
+        display: grid;
+        grid-template-columns: 22px 1fr;
+        gap: 10px;
+        align-items: start;
+        padding: 14px;
+        border-radius: 10px;
+        background: #f6f3ee;
+        font-weight: 500;
+      }
+
+      .acknowledgement input {
+        width: 18px;
+        height: 18px;
+        margin: 2px 0 0;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 24px 30px 30px;
+      }
+
+      button {
+        min-height: 44px;
+        padding: 10px 16px;
+        border: 1px solid #171717;
+        border-radius: 10px;
+        background: #171717;
+        color: #fff;
+        font: inherit;
+        font-weight: 750;
+        cursor: pointer;
+      }
+
+      button.secondary {
+        background: #fff;
+        color: #171717;
+      }
+
+      button:disabled {
+        cursor: wait;
+        opacity: 0.55;
+      }
+
+      #status {
+        flex-basis: 100%;
+        min-height: 24px;
+        padding-top: 4px;
+        white-space: pre-wrap;
+        line-height: 1.55;
+      }
+
+      #status[data-kind="error"] {
+        color: #a11c1c;
+      }
+
+      #status[data-kind="success"] {
+        color: #176b36;
+      }
+
+      #result {
+        display: none;
+        padding: 20px;
+        border-radius: 12px;
+        background: #edf8f0;
+      }
+
+      #result.visible {
+        display: block;
+      }
+
+      a {
+        color: #1b5dab;
+      }
+
+      code {
+        padding: 2px 5px;
+        border-radius: 4px;
+        background: #eeeae3;
+      }
+
+      @media (max-width: 600px) {
+        body {
+          padding: 0;
+        }
+
+        main {
+          min-height: 100vh;
+          border: 0;
+          border-radius: 0;
+        }
+
+        header,
+        section,
+        .actions {
+          padding-left: 20px;
+          padding-right: 20px;
+        }
+
+        dl {
+          grid-template-columns: 1fr;
+          gap: 3px;
+        }
+
+        dd + dt {
+          margin-top: 9px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Notion Project Docs 설정</h1>
+        <p>
+          토큰과 부모 페이지 URL만 입력하면 전용 미러 페이지와 GitHub Environment Secret을
+          구성합니다. 입력값은 이 컴퓨터의 일회성 서버에서만 처리됩니다.
+        </p>
+      </header>
+
+      <section aria-labelledby="target-heading">
+        <h2 id="target-heading">설정 대상</h2>
+        <dl>
+          <dt>저장소</dt>
+          <dd id="target"></dd>
+          <dt>기준 브랜치</dt>
+          <dd id="branch"></dd>
+          <dt>게시 방식</dt>
+          <dd id="mode"></dd>
+          <dt>GitHub Environment</dt>
+          <dd id="environment"></dd>
+        </dl>
+      </section>
+
+      <section aria-labelledby="documents-heading">
+        <h2 id="documents-heading">생성할 전용 미러 페이지</h2>
+        <ul id="documents"></ul>
+      </section>
+
+      <form id="setup-form">
+        <section aria-labelledby="credentials-heading">
+          <h2 id="credentials-heading">Notion 연결</h2>
+          <label>
+            Notion integration token
+            <input
+              id="notion-token"
+              name="notionToken"
+              type="password"
+              autocomplete="new-password"
+              maxlength="512"
+              required
+              spellcheck="false"
+            />
+            <span>토큰은 URL, 파일, 브라우저 저장소 또는 명령행 인수에 저장되지 않습니다.</span>
+          </label>
+
+          <label>
+            Integration에 연결한 부모 페이지 URL
+            <input
+              id="parent-page"
+              name="parentPage"
+              type="url"
+              autocomplete="off"
+              maxlength="2048"
+              placeholder="https://www.notion.so/..."
+              required
+              spellcheck="false"
+            />
+            <span>Wizard가 이 페이지 아래에 문서별 전용 미러 페이지를 생성합니다.</span>
+          </label>
+
+          <label class="acknowledgement">
+            <input id="acknowledge" name="acknowledge" type="checkbox" required />
+            <span>
+              전용 GitHub Environment의 reviewer와 배포 브랜치 정책을 현재 설정에 맞게 구성하고,
+              기존의 다른 배포 브랜치 정책은 제거하는 데 동의합니다.
+            </span>
+          </label>
+        </section>
+
+        <div class="actions">
+          <button id="submit-button" type="submit">연결 검증 및 설정</button>
+          <button id="login-button" class="secondary" type="button">GitHub 로그인/갱신</button>
+          <div id="status" role="status" aria-live="polite"></div>
+        </div>
+      </form>
+
+      <section id="result" aria-labelledby="result-heading">
+        <h2 id="result-heading">설정 완료</h2>
+        <p id="result-summary"></p>
+        <ul id="result-pages"></ul>
+      </section>
+    </main>
+
+    <script nonce="__CSP_NONCE__">
+      const bootstrap = __BOOTSTRAP_JSON__;
+      const form = document.querySelector("#setup-form");
+      const submitButton = document.querySelector("#submit-button");
+      const loginButton = document.querySelector("#login-button");
+      const status = document.querySelector("#status");
+      const tokenInput = document.querySelector("#notion-token");
+
+      document.querySelector("#target").textContent = bootstrap.target;
+      document.querySelector("#branch").textContent = bootstrap.canonicalBranch;
+      document.querySelector("#mode").textContent = bootstrap.publicationMode;
+      document.querySelector("#environment").textContent = bootstrap.environmentName;
+      for (const configuredDocument of bootstrap.documents) {
+        const item = document.createElement("li");
+        item.textContent = `${configuredDocument.label} (${configuredDocument.key})`;
+        document.querySelector("#documents").append(item);
+      }
+
+      function setBusy(busy) {
+        submitButton.disabled = busy;
+        loginButton.disabled = busy;
+      }
+
+      function setStatus(message, kind = "") {
+        status.textContent = message;
+        status.dataset.kind = kind;
+      }
+
+      async function post(path, payload = {}) {
+        const response = await fetch(path, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+          cache: "no-store",
+          credentials: "omit",
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || `요청 실패 (${response.status})`);
+        return result;
+      }
+
+      loginButton.addEventListener("click", async () => {
+        setBusy(true);
+        setStatus("GitHub 브라우저 로그인을 시작합니다. 열린 창에서 인증을 완료하세요.");
+        try {
+          const result = await post("github-login");
+          setStatus(`${result.login} 계정으로 GitHub 인증을 확인했습니다.`, "success");
+        } catch (error) {
+          setStatus(error.message, "error");
+        } finally {
+          setBusy(false);
+        }
+      });
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        setBusy(true);
+        setStatus("GitHub와 Notion 접근권한을 검증하고 설정하는 중입니다.");
+        document.querySelector("#result").classList.remove("visible");
+
+        const payload = {
+          notionToken: tokenInput.value,
+          parentPage: document.querySelector("#parent-page").value,
+          acknowledgePolicyReplacement: document.querySelector("#acknowledge").checked,
+        };
+
+        try {
+          const result = await post("setup", payload);
+          setStatus("설정이 완료됐습니다. 이 창은 잠시 후 연결이 종료됩니다.", "success");
+          document.querySelector("#result-summary").textContent =
+            `${result.github.nameWithOwner}의 ${result.environment.environmentName} Environment에 ` +
+            `${result.secrets.secretNames.join(", ")}을 등록했습니다.`;
+          const pageList = document.querySelector("#result-pages");
+          pageList.replaceChildren();
+          for (const page of result.notion.pages) {
+            const item = document.createElement("li");
+            const link = document.createElement("a");
+            link.href = page.pageUrl;
+            link.target = "_blank";
+            link.rel = "noreferrer";
+            link.textContent = page.label;
+            item.append(link);
+            pageList.append(item);
+          }
+          document.querySelector("#result").classList.add("visible");
+          form.reset();
+        } catch (error) {
+          setStatus(error.message, "error");
+        } finally {
+          tokenInput.value = "";
+          payload.notionToken = "";
+          setBusy(false);
+        }
+      });
+    </script>
+  </body>
+</html>

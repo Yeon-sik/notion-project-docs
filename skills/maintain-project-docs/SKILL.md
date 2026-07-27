@@ -60,6 +60,17 @@ or changing the runtime bundle.
    documents together.
 6. Configure Notion and GitHub only after reading
    [references/OPERATIONS.md](references/OPERATIONS.md).
+7. When the user explicitly authorizes Notion and GitHub configuration, prefer
+   the local setup wizard over manual page-ID and secret entry:
+
+   ```text
+   cd <repository>
+   node <skill-directory>/scripts/setup-project-docs.mjs
+   ```
+
+   The wizard uses the current working directory as the target. `--target`
+   remains an optional override for automation. The wizard performs external
+   writes. Do not launch it for a local-only installation request.
 
 ## Maintain the Notion mirror
 

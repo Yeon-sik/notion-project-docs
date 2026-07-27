@@ -15,12 +15,15 @@
 | Codex plugin | Discover the workflow and guide evidence-based writing |
 | Skill assets | Supply templates, configuration defaults, and workflow source |
 | Repository installer | Pin a reviewed runtime into the target repository |
+| Local setup wizard | Provision Notion pages and GitHub environment secrets in one ephemeral loopback session |
 | Target configuration | Define canonical branch, publication mode, document keys, paths, and required sections |
 | GitHub Actions | Validate automatically and publish by the selected manual or canonical-push policy |
 | Notion API | Read and replace dedicated mirror page content |
 
 The plugin is intentionally skills-only. It does not host a service or proxy
-credentials. GitHub Actions talks directly to Notion.
+credentials. The optional setup UI binds only to `127.0.0.1`, keeps setup
+state in memory, and closes after success or timeout. GitHub Actions talks
+directly to Notion during publication.
 
 ## Installed runtime
 
@@ -51,6 +54,8 @@ service failures.
 ## Security model
 
 - No plugin-hosted backend or telemetry.
+- Setup credentials are not placed in URLs, command arguments, repository
+  files, logs, or browser storage.
 - No committed tokens or page IDs.
 - Read-only GitHub token permissions.
 - Branch restriction enforced inside the publisher.

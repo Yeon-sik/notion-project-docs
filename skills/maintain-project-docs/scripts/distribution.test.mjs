@@ -109,6 +109,9 @@ test("installer creates a complete idempotent runtime bundle", () => {
   assert.match(workflow, /workflow_dispatch:/);
   assert.match(workflow, /inputs\.confirmation == 'PUBLISH'/);
   assert.match(workflow, /needs\.validate\.outputs\.publication_mode == 'on-main-push'/);
+  assert.match(workflow, /github\.ref == needs\.validate\.outputs\.canonical_ref/);
+  assert.match(workflow, /canonical_ref=refs\/heads\//);
+  assert.doesNotMatch(workflow, /github\.ref == 'refs\/heads\/main'/);
 
   for (const file of first.files) {
     const content = readFileSync(file.absolutePath, "utf8");

@@ -18,6 +18,11 @@ personal data in a report.
 ## Security boundaries
 
 - The plugin itself has no hosted service and stores no credentials.
+- The optional setup server binds to `127.0.0.1`, uses an unguessable session
+  path and strict origin/CSP controls, and erases in-memory page mappings when
+  the session closes.
+- Setup secrets are passed to GitHub CLI through standard input, never command
+  arguments or temporary files.
 - Target repositories keep `NOTION_TOKEN` and `NOTION_PAGE_IDS_JSON` in a
   protected GitHub environment.
 - The generated workflow grants only `contents: read`.

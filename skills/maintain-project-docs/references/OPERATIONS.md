@@ -11,9 +11,13 @@
 ## Notion connection
 
 Create a Notion integration with read-content and update-content capabilities.
-Create one dedicated mirror page per configured document and share every page
-with the integration. Do not use pages that contain manual notes, child pages,
-or databases.
+Create one parent page dedicated to project-doc mirrors and connect it to the
+integration. The setup wizard creates one dedicated child page per configured
+document. Do not put manual notes, unrelated child pages, or databases inside
+the generated mirror pages.
+
+If the setup wizard cannot be used, create and share each mirror page manually
+and record its ID in `NOTION_PAGE_IDS_JSON`.
 
 ## GitHub controls
 
@@ -33,6 +37,12 @@ branches to the configured canonical branch.
 Both modes keep the protected environment for secrets and branch policy. Pull
 requests and non-canonical pushes never write to Notion.
 
+The setup wizard configures the installed environment, replaces its deployment
+branch policies with the configured canonical branch, and uses the current
+GitHub user as the required reviewer in `manual` mode. In `on-main-push` mode,
+it removes required reviewers so canonical pushes do not wait for approval.
+Review the displayed target before accepting this policy change.
+
 ## Secrets
 
 Store both values in the protected GitHub environment:
@@ -48,6 +58,11 @@ Example:
 ```
 
 Never commit either value.
+
+The setup wizard sends both values to `gh secret set` through standard input.
+GitHub does not return secret values after storage, so the wizard verifies the
+presence of both secret names and the first publication verifies their actual
+runtime behavior.
 
 ## First publication
 

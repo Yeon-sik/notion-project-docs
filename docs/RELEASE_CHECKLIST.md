@@ -12,6 +12,9 @@ owner's explicit approval.
 - [ ] README examples match the installer output.
 - [ ] English and Korean installation paths are tested.
 - [ ] No token, page ID, private content, or local user path is present.
+- [ ] Setup UI binds only to loopback and does not use browser storage.
+- [ ] GitHub secrets are passed through stdin, not command arguments or files.
+- [ ] The configured canonical branch, not a hard-coded branch, gates publishing.
 - [ ] License, privacy, terms, support, security, and contribution files are
       reviewed.
 
