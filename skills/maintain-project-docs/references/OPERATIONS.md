@@ -47,11 +47,21 @@ Review the displayed target before accepting this policy change.
 
 GitHub Free, Pro, and Team plans support required reviewers only for public
 repositories. When GitHub returns the specific billing-plan HTTP 422, the
-wizard retries without a reviewer and reports the reduced protection on the
-completion screen. Do not interpret a successful fallback as an approved
-deployment: the exact `PUBLISH` guard remains, but the separate Environment
-approval does not. Private repositories still require a plan with Environment
-secret support.
+wizard retries with a branch-policy-only request that omits `reviewers`,
+`wait_timer`, and `prevent_self_review`, then reports the reduced protection
+on the completion screen. Do not interpret a successful fallback as an
+approved deployment: the exact `PUBLISH` guard remains, but the separate
+Environment approval does not. Private repositories still require a plan with
+Environment secret support.
+
+If GitHub CLI authentication expires, use **GitHub login/refresh** in the
+wizard. It copies the one-time device code, opens GitHub authentication in the
+browser, and waits up to five minutes. If the browser does not open, visit
+`https://github.com/login/device` and paste the copied code, or run:
+
+```text
+gh auth login --hostname github.com --web --clipboard
+```
 
 ## Secrets
 

@@ -112,7 +112,11 @@ Expected:
 - Sends both GitHub secrets through stdin and never writes credentials or page
   IDs to the repository, logs, command arguments, or browser storage.
 - Retries without a reviewer only for GitHub's specific required-reviewer plan
-  HTTP 422 and displays a reduced-protection warning.
+  HTTP 422, omits every protection-rule field from the fallback request, and
+  displays a reduced-protection warning.
+- Recovers expired GitHub CLI authentication with the browser and clipboard
+  device flow, gives immediate visible guidance, and times out after five
+  minutes.
 - Preserves page mappings in memory for a same-session retry and safely
   discovers blank or fingerprinted `[Git Mirror]` pages after a process restart.
 

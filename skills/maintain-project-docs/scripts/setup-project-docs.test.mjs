@@ -9,6 +9,7 @@ import { startSetupWizard } from "./setup-project-docs.mjs";
 import {
   configureGitHubEnvironment,
   discoverGitHubRepository,
+  loginToGitHub,
   storeGitHubEnvironmentSecrets,
 } from "./setup/github-provisioner.mjs";
 import {
@@ -279,6 +280,41 @@ test("GitHub provisioning restricts the environment and sends secrets only throu
   assert.equal(secretCalls[1].input, pageIdsJson);
 });
 
+test("GitHub login uses the browser device flow without waiting for terminal input", async () => {
+  const calls = [];
+  const run = async (command, args, options = {}) => {
+    calls.push({ command, args, options });
+    const joined = args.join(" ");
+    if (joined.startsWith("auth login")) return { stdout: "", stderr: "" };
+    if (joined.startsWith("auth status")) return { stdout: "", stderr: "" };
+    if (joined.startsWith("repo view")) {
+      return {
+        stdout: JSON.stringify({
+          nameWithOwner: "owner/repository",
+          visibility: "PRIVATE",
+          url: "https://github.com/owner/repository",
+        }),
+        stderr: "",
+      };
+    }
+    if (joined === "api user") {
+      return { stdout: JSON.stringify({ id: 42, login: "owner" }), stderr: "" };
+    }
+    throw new Error(`Unexpected gh call: ${joined}`);
+  };
+
+  const repository = await loginToGitHub({ cwd: "C:\\repo", run });
+  const loginCall = calls[0];
+
+  assert.equal(loginCall.command, "gh");
+  assert.deepEqual(loginCall.args.slice(0, 2), ["auth", "login"]);
+  assert.ok(loginCall.args.includes("--web"));
+  assert.ok(loginCall.args.includes("--clipboard"));
+  assert.equal(loginCall.options.input, "\n");
+  assert.equal(loginCall.options.timeoutMs, 300_000);
+  assert.equal(repository.nameWithOwner, "owner/repository");
+});
+
 test("GitHub provisioning falls back when the plan rejects required reviewers", async () => {
   const environmentBodies = [];
   const run = async (_command, args, options = {}) => {
@@ -286,7 +322,7 @@ test("GitHub provisioning falls back when the plan rejects required reviewers", 
     if (joined.includes("--method PUT") && joined.includes("/environments/")) {
       const body = JSON.parse(options.input);
       environmentBodies.push(body);
-      if (body.reviewers.length > 0) {
+      if (Array.isArray(body.reviewers) && body.reviewers.length > 0) {
         throw new Error(
           "gh api failed with exit code 1: Failed to create the environment protection rule. " +
             "Please ensure the billing plan supports the required reviewers protection rule. " +
@@ -325,7 +361,13 @@ test("GitHub provisioning falls back when the plan rejects required reviewers", 
 
   assert.equal(environmentBodies.length, 2);
   assert.deepEqual(environmentBodies[0].reviewers, [{ type: "User", id: 42 }]);
-  assert.deepEqual(environmentBodies[1].reviewers, []);
+  assert.equal("reviewers" in environmentBodies[1], false);
+  assert.equal("wait_timer" in environmentBodies[1], false);
+  assert.equal("prevent_self_review" in environmentBodies[1], false);
+  assert.deepEqual(environmentBodies[1].deployment_branch_policy, {
+    protected_branches: false,
+    custom_branch_policies: true,
+  });
   assert.equal(environment.reviewer, "");
   assert.equal(environment.reviewerProtection, "unsupported-by-plan");
 });
@@ -379,10 +421,17 @@ test("Loopback wizard enforces origin checks and does not persist the submitted 
       secrets: { secretNames: ["NOTION_TOKEN", "NOTION_PAGE_IDS_JSON"] },
     };
   };
+  const githubLogin = async () => ({
+    currentUser: { id: 42, login: "owner" },
+    nameWithOwner: "owner/repository",
+    url: "https://github.com/owner/repository",
+    visibility: "PRIVATE",
+  });
   const wizard = await startSetupWizard({
     target,
     openBrowser: false,
     setupProvisioner,
+    githubLogin,
   });
   const origin = new URL(wizard.url).origin;
 
@@ -413,6 +462,20 @@ test("Loopback wizard enforces origin checks and does not persist the submitted 
       body: JSON.stringify({ notionToken: "x".repeat(17_000) }),
     });
     assert.equal(oversized.status, 413);
+
+    const loginResponse = await fetch(`${wizard.url}github-login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Origin: origin,
+      },
+      body: JSON.stringify({}),
+    });
+    assert.equal(loginResponse.status, 200);
+    assert.deepEqual(await loginResponse.json(), {
+      login: "owner",
+      repository: "owner/repository",
+    });
 
     const accepted = await fetch(`${wizard.url}setup`, {
       method: "POST",

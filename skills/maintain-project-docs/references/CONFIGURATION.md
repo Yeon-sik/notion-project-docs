@@ -54,13 +54,21 @@ permission. It does not write credentials or page IDs to the target
 repository, command arguments, logs, browser storage, or a hosted service.
 Use `--no-open` when the local URL should only be printed.
 
+If authentication is missing or expired, **GitHub login/refresh** runs
+`gh auth login --hostname github.com --web --clipboard`, submits the CLI's
+browser prompt, and waits up to five minutes. The one-time code is copied to
+the clipboard. If no browser opens, visit `https://github.com/login/device`
+manually and paste that code.
+
 GitHub Free, Pro, and Team plans expose required reviewers only for public
 repositories. If GitHub returns the specific plan-limit HTTP 422 while
 configuring a manual-mode reviewer, the wizard retries the Environment without
-a reviewer and displays a reduced-protection warning. The exact `PUBLISH`
-confirmation and canonical-branch restriction remain in force, but there is no
-separate Environment approval. Private repositories must still use a plan that
-supports Environment secrets.
+a reviewer. The fallback request omits `reviewers`, `wait_timer`, and
+`prevent_self_review` entirely and keeps only the deployment branch policy.
+The wizard displays a reduced-protection warning. The exact `PUBLISH`
+confirmation and canonical-branch restriction remain in force, but there is
+no separate Environment approval. Private repositories must still use a plan
+that supports Environment secrets.
 
 ## Configuration file
 

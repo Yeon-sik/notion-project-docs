@@ -97,11 +97,20 @@ node "$env:USERPROFILE\.codex\skills\maintain-project-docs\scripts\setup-project
 문서별 전용 미러 페이지, GitHub Environment, 기준 브랜치 제한,
 `NOTION_TOKEN`, `NOTION_PAGE_IDS_JSON`을 구성합니다. `manual` 모드에서는 현재
 GitHub 사용자를 required reviewer로 지정합니다. 저장소와 GitHub 요금제가 이를
-지원하지 않아 전용 HTTP 422를 반환하면 reviewer 없이 다시 구성하고 완료 화면에
-보호 수준 경고를 표시합니다.
+지원하지 않아 전용 HTTP 422를 반환하면 보호 규칙 필드를 모두 생략하고 기준
+브랜치 제한만 구성한 뒤 완료 화면에 보호 수준 경고를 표시합니다.
 
 GitHub CLI 로그인이 만료됐다면 화면의 **GitHub 로그인/갱신**을 먼저
-실행합니다. Wizard를 사용할 수 없는 환경에서는 아래 수동 절차를 따릅니다.
+실행합니다. 일회용 코드는 클립보드에 복사되고 GitHub 인증 창이 열립니다.
+창이 열리지 않으면 브라우저에서 `https://github.com/login/device`를 열어
+복사된 코드를 붙여 넣으세요. 5분 안에 완료되지 않으면 다시 시도하거나 대상
+저장소 터미널에서 아래 명령을 실행합니다.
+
+```powershell
+gh auth login --hostname github.com --web --clipboard
+```
+
+Wizard를 사용할 수 없는 환경에서는 아래 수동 절차를 따릅니다.
 
 ### 4-1. Notion integration 만들기
 

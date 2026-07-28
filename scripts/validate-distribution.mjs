@@ -149,6 +149,17 @@ assert(
   "Setup wizard must report the required-reviewer plan fallback visibly.",
 );
 assert(
+  githubProvisioner.includes('"--clipboard"') &&
+    githubProvisioner.includes('input: "\\n"') &&
+    setupHtml.includes("GitHub 일회용 코드가 클립보드에 복사되고 인증 창이 열립니다."),
+  "GitHub authentication recovery must use a visible browser and clipboard device flow.",
+);
+assert(
+  githubProvisioner.includes("const compatibleBody = {") &&
+    githubProvisioner.includes("deployment_branch_policy: deploymentBranchPolicy"),
+  "The plan-compatible environment fallback must omit unsupported protection-rule fields.",
+);
+assert(
   !/\b(?:localStorage|sessionStorage)\b/.test(setupHtml),
   "Setup UI must not persist credentials in browser storage.",
 );

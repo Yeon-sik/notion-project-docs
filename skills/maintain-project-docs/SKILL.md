@@ -81,8 +81,12 @@ or changing the runtime bundle.
 - In `manual` mode, require `workflow_dispatch`, the exact `PUBLISH`
   confirmation, and protected-environment approval when required reviewers are
   available for the repository and GitHub plan. If GitHub returns its specific
-  plan-limit 422 for required reviewers, continue without a reviewer only after
-  the wizard's policy acknowledgement and report the reduced protection.
+  plan-limit 422 for required reviewers, retry with only the deployment branch
+  policy after the wizard's policy acknowledgement and report the reduced
+  protection.
+- Recover expired GitHub CLI authentication through the browser and clipboard
+  device flow with a bounded timeout; do not leave the setup UI waiting
+  silently.
 - In `on-main-push` mode, publish automatically only after a matching change is
   pushed or merged to the canonical branch. Keep the GitHub environment,
   secrets, and branch restriction, but do not configure a required reviewer

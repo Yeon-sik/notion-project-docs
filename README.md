@@ -111,8 +111,12 @@ canonical branch, configures the current GitHub user as reviewer in `manual`
 mode when the repository plan supports required reviewers, and stores
 `NOTION_TOKEN` plus `NOTION_PAGE_IDS_JSON` through GitHub CLI stdin. When GitHub
 rejects required reviewers with its plan-specific HTTP 422 response, the wizard
-retries without a reviewer and shows a reduced-protection warning. No token or
-page map is written to the repository or browser storage.
+retries with only the canonical-branch policy, omitting all unsupported
+protection-rule fields, and shows a reduced-protection warning. If GitHub CLI
+authentication has expired, **GitHub login/refresh** starts the browser device
+flow, copies the one-time code to the clipboard, and times out after five
+minutes instead of waiting indefinitely. No token or page map is written to
+the repository or browser storage.
 
 After setup:
 
