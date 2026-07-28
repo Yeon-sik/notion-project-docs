@@ -88,11 +88,17 @@ Environment와 아래 두 Secret을 구성합니다. 토큰과 페이지 ID 매�
 
 `manual` 모드는 GitHub 저장소와 요금제가 지원할 때 Environment required
 reviewer를 사용합니다. GitHub가 요금제 제한 HTTP 422를 반환하면 Wizard는
-reviewer 없이 다시 구성하고 보호 수준이 낮아졌다는 경고를 완료 화면에 표시합니다.
-이 경우에도 정확한 `PUBLISH` 확인은 유지되지만 별도 Environment 승인은 없습니다.
+지원하지 않는 보호 규칙 필드를 모두 빼고 기준 브랜치 정책만으로 다시 구성한 뒤,
+보호 수준이 낮아졌다는 경고를 완료 화면에 표시합니다. 이 경우에도 정확한
+`PUBLISH` 확인은 유지되지만 별도 Environment 승인은 없습니다.
 `on-main-push` 모드는 자동 발행을 위해 required reviewer를 두지 않고
 배포 브랜치를 `main`으로 제한합니다. 수동 `PUBLISH` 실행은 복구 경로로
 계속 사용할 수 있습니다.
+
+GitHub CLI 로그인이 만료됐다면 **GitHub 로그인/갱신**을 누릅니다. 일회용 코드가
+클립보드에 복사되고 브라우저 인증 창이 열립니다. 인증이 5분 안에 끝나지 않으면
+Wizard가 오류를 표시하므로 버튼을 다시 누르거나 터미널에서
+`gh auth login --hostname github.com --web --clipboard`를 실행합니다.
 
 상세 설정은 [CONFIGURATION.md](./skills/maintain-project-docs/references/CONFIGURATION.md),
 운영 절차는 [OPERATIONS.md](./skills/maintain-project-docs/references/OPERATIONS.md)를

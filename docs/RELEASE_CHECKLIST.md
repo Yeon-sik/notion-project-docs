@@ -15,7 +15,10 @@ owner's explicit approval.
 - [ ] Setup UI binds only to loopback and does not use browser storage.
 - [ ] GitHub secrets are passed through stdin, not command arguments or files.
 - [ ] Required-reviewer plan-limit fallback is narrow, tested, and visibly
-      reports reduced protection.
+      reports reduced protection; its retry body omits all protection-rule
+      fields.
+- [ ] GitHub login/refresh opens the browser device flow, copies the code,
+      reports progress immediately, and has a bounded timeout.
 - [ ] The configured canonical branch, not a hard-coded branch, gates publishing.
 - [ ] License, privacy, terms, support, security, and contribution files are
       reviewed.

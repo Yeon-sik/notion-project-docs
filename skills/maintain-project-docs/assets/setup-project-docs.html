@@ -376,7 +376,9 @@
 
       loginButton.addEventListener("click", async () => {
         setBusy(true);
-        setStatus("GitHub 브라우저 로그인을 시작합니다. 열린 창에서 인증을 완료하세요.");
+        setStatus(
+          "GitHub 일회용 코드가 클립보드에 복사되고 인증 창이 열립니다. 인증이 끝날 때까지 이 화면을 닫지 마세요.",
+        );
         try {
           const result = await post("github-login");
           setStatus(`${result.login} 계정으로 GitHub 인증을 확인했습니다.`, "success");

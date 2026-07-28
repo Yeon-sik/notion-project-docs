@@ -13,7 +13,7 @@ function commandError(command, args, code, stderr) {
   return error;
 }
 
-export function runCommand(command, args, { cwd, input = "" } = {}) {
+export function runCommand(command, args, { cwd, input = "", timeoutMs = 0 } = {}) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
       cwd,
@@ -24,6 +24,15 @@ export function runCommand(command, args, { cwd, input = "" } = {}) {
     });
     let stdout = "";
     let stderr = "";
+    let settled = false;
+    let timeout;
+
+    const settle = (callback) => {
+      if (settled) return;
+      settled = true;
+      if (timeout) clearTimeout(timeout);
+      callback();
+    };
 
     child.stdout.setEncoding("utf8");
     child.stderr.setEncoding("utf8");
@@ -34,12 +43,25 @@ export function runCommand(command, args, { cwd, input = "" } = {}) {
       stderr += chunk;
     });
     child.on("error", (error) => {
-      reject(new Error(`Cannot run ${command}: ${error.message}`));
+      settle(() => reject(new Error(`Cannot run ${command}: ${error.message}`)));
     });
     child.on("close", (code) => {
-      if (code === 0) resolve({ stdout, stderr });
-      else reject(commandError(command, args, code, stderr));
+      settle(() => {
+        if (code === 0) resolve({ stdout, stderr });
+        else reject(commandError(command, args, code, stderr));
+      });
     });
+
+    if (timeoutMs > 0) {
+      timeout = setTimeout(() => {
+        const error = new Error(
+          `${command} ${args.join(" ")} did not finish within ${Math.ceil(timeoutMs / 1_000)} seconds.`,
+        );
+        error.code = "COMMAND_TIMEOUT";
+        child.kill();
+        settle(() => reject(error));
+      }, timeoutMs);
+    }
 
     child.stdin.end(input);
   });
@@ -84,20 +106,35 @@ function requiredReviewerIsUnsupported(error) {
 }
 
 export async function loginToGitHub({ cwd, run = runCommand } = {}) {
-  await run(
-    "gh",
-    [
-      "auth",
-      "login",
-      "--hostname",
-      "github.com",
-      "--web",
-      "--git-protocol",
-      "https",
-      "--skip-ssh-key",
-    ],
-    { cwd },
-  );
+  try {
+    await run(
+      "gh",
+      [
+        "auth",
+        "login",
+        "--hostname",
+        "github.com",
+        "--web",
+        "--clipboard",
+        "--git-protocol",
+        "https",
+        "--skip-ssh-key",
+      ],
+      {
+        cwd,
+        input: "\n",
+        timeoutMs: 5 * 60 * 1_000,
+      },
+    );
+  } catch (error) {
+    if (error?.code === "COMMAND_TIMEOUT") {
+      throw new Error(
+        "GitHub login did not finish within 5 minutes. Retry the button or run `gh auth login --hostname github.com --web --clipboard` in a terminal.",
+        { cause: error },
+      );
+    }
+    throw error;
+  }
   return discoverGitHubRepository({ cwd, run });
 }
 
@@ -170,14 +207,15 @@ export async function configureGitHubEnvironment({
         ]
       : [];
   const endpoint = environmentEndpoint(repository, environmentName);
+  const deploymentBranchPolicy = {
+    protected_branches: false,
+    custom_branch_policies: true,
+  };
   const body = {
     wait_timer: 0,
     prevent_self_review: false,
     reviewers,
-    deployment_branch_policy: {
-      protected_branches: false,
-      custom_branch_policies: true,
-    },
+    deployment_branch_policy: deploymentBranchPolicy,
   };
   let reviewerProtection =
     publicationMode === "manual" ? "required" : "not-requested";
@@ -190,11 +228,13 @@ export async function configureGitHubEnvironment({
     });
   } catch (error) {
     if (publicationMode === "manual" && requiredReviewerIsUnsupported(error)) {
-      body.reviewers = [];
+      const compatibleBody = {
+        deployment_branch_policy: deploymentBranchPolicy,
+      };
       try {
         await ghJson(run, ["api", "--method", "PUT", endpoint, "--input", "-"], {
           cwd,
-          input: JSON.stringify(body),
+          input: JSON.stringify(compatibleBody),
           label: "GitHub environment configuration without a required reviewer",
         });
         reviewerProtection = "unsupported-by-plan";
