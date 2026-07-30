@@ -131,6 +131,48 @@ test("configuration rejects malformed Notion page IDs", () => {
   );
 });
 
+test("publication renders an immutable Git snapshot instead of later working-tree edits", async () => {
+  const root = temporaryProject();
+  const environment = publicationEnvironment();
+  const configuration = buildDocumentConfiguration(environment, root);
+  const sourceMarkdownByPath = new Map(
+    configuration.documents.map((document) => [
+      document.repositoryPath,
+      readFileSync(document.file, "utf8"),
+    ]),
+  );
+  const projectConfig = {
+    canonicalBranch: configuration.canonicalBranch,
+    configPath: configuration.configPath,
+    documents: configuration.documents.map(
+      ({ key, label, repositoryPath, requiredSections }) => ({
+        key,
+        label,
+        repositoryPath,
+        requiredSections,
+      }),
+    ),
+    rootDirectory: configuration.rootDirectory,
+  };
+  const baseline = await syncProjectDocuments({
+    environment,
+    rootDirectory: root,
+    dryRun: true,
+  });
+
+  writeFileSync(path.join(root, "docs", "Project_Intro.md"), "# Mutated\n", "utf8");
+  writeFileSync(path.join(root, "docs", "Project_Detail.md"), "# Mutated\n", "utf8");
+  const fromSnapshot = await syncProjectDocuments({
+    environment,
+    rootDirectory: root,
+    dryRun: true,
+    projectConfig,
+    sourceMarkdownByPath,
+  });
+
+  assert.deepEqual(fromSnapshot.documents, baseline.documents);
+});
+
 test("relative sibling docs become Notion links and tracked assets become immutable GitHub links", () => {
   const root = temporaryProject();
   const documents = [
@@ -383,8 +425,7 @@ test("a source SHA marker alone does not hide manual Notion drift", async () => 
 test("publication updates both pages only after successful preflight", async () => {
   const root = temporaryProject();
   const calls = [];
-  const originalFetch = globalThis.fetch;
-  globalThis.fetch = async (url, init) => {
+  const fetchImpl = async (url, init) => {
     calls.push({ url: String(url), method: init.method });
     return pageMarkdownResponse(
       pageIdFromUrl(url),
@@ -392,20 +433,17 @@ test("publication updates both pages only after successful preflight", async () 
     );
   };
 
-  try {
-    const result = await syncProjectDocuments({
-      environment: publicationEnvironment(),
-      rootDirectory: root,
-    });
-    assert.equal(calls.filter((call) => call.method === "GET").length, 2);
-    assert.equal(calls.filter((call) => call.method === "PATCH").length, 2);
-    assert.deepEqual(
-      result.documents.map((document) => document.status),
-      ["Synced", "Synced"],
-    );
-  } finally {
-    globalThis.fetch = originalFetch;
-  }
+  const result = await syncProjectDocuments({
+    environment: publicationEnvironment(),
+    rootDirectory: root,
+    fetchImpl,
+  });
+  assert.equal(calls.filter((call) => call.method === "GET").length, 2);
+  assert.equal(calls.filter((call) => call.method === "PATCH").length, 2);
+  assert.deepEqual(
+    result.documents.map((document) => document.status),
+    ["Synced", "Synced"],
+  );
 });
 
 test("publication accepts Notion-normalized Markdown when the source fingerprint survives", async () => {

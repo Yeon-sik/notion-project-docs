@@ -8,6 +8,11 @@ import {
   storeGitHubEnvironmentSecrets,
 } from "./github-provisioner.mjs";
 import {
+  publishInitialProjectDocuments,
+  resolveInitialPublicationSource,
+  verifyInitialPublicationSourceStillCurrent,
+} from "./initial-publisher.mjs";
+import {
   preflightNotionParent,
   provisionNotionMirrorPages,
 } from "./notion-provisioner.mjs";
@@ -67,9 +72,11 @@ export async function provisionProjectDocsSetup({
   context,
   notionToken,
   parentPage,
+  publishInitialContent = false,
   pageIdsByKey = new Map(),
   github = {},
   notion = {},
+  initialPublication = {},
 }) {
   if (!context?.rootDirectory || !Array.isArray(context.documents)) {
     throw new Error("Setup context is invalid.");
@@ -86,6 +93,14 @@ export async function provisionProjectDocsSetup({
       fetchImpl: notion.fetchImpl,
     }),
   ]);
+  const initialSource = publishInitialContent
+    ? await (initialPublication.resolveSource ?? resolveInitialPublicationSource)({
+        context,
+        repository: githubRepository.nameWithOwner,
+        run: initialPublication.run ?? github.run,
+        validate: initialPublication.validate,
+      })
+    : null;
 
   const environment = await configureGitHubEnvironment({
     cwd: context.rootDirectory,
@@ -110,6 +125,35 @@ export async function provisionProjectDocsSetup({
     ),
   );
 
+  let publication = {
+    status: "skipped",
+    sourceSha: "",
+    documents: [],
+  };
+  if (initialSource) {
+    await (
+      initialPublication.verifySource ??
+      verifyInitialPublicationSourceStillCurrent
+    )({
+      context,
+      repository: githubRepository.nameWithOwner,
+      sourceSha: initialSource.sourceSha,
+      run: initialPublication.run ?? github.run,
+    });
+    publication = await (
+      initialPublication.publishDocuments ?? publishInitialProjectDocuments
+    )({
+      context,
+      notionToken,
+      pageIdsJson,
+      repository: githubRepository.nameWithOwner,
+      sourceSha: initialSource.sourceSha,
+      sourceSnapshot: initialSource.sourceSnapshot,
+      fetchImpl: notion.fetchImpl,
+      publisher: initialPublication.publisher,
+    });
+  }
+
   const secrets = await storeGitHubEnvironmentSecrets({
     cwd: context.rootDirectory,
     repository: githubRepository.nameWithOwner,
@@ -131,6 +175,7 @@ export async function provisionProjectDocsSetup({
       parentUrl: notionParent.parentUrl,
       pages: pages.map(({ key, label, pageUrl }) => ({ key, label, pageUrl })),
     },
+    publication,
     secrets,
   };
 }

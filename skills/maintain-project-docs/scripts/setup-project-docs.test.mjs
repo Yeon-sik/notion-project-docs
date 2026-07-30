@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -17,7 +17,15 @@ import {
   preflightNotionParent,
   provisionNotionMirrorPages,
 } from "./setup/notion-provisioner.mjs";
-import { loadSetupContext } from "./setup/project-docs-setup.mjs";
+import {
+  loadSetupContext,
+  provisionProjectDocsSetup,
+} from "./setup/project-docs-setup.mjs";
+import {
+  publishInitialProjectDocuments,
+  resolveInitialPublicationSource,
+  verifyInitialPublicationSourceStillCurrent,
+} from "./setup/initial-publisher.mjs";
 
 function temporaryRepository() {
   const target = mkdtempSync(path.join(tmpdir(), "notion-project-docs-setup-"));
@@ -98,14 +106,33 @@ test("Notion provisioning creates pages and reuses them across setup sessions", 
       return jsonResponse({
         object: "page",
         id: pageId,
+        parent: {
+          type: "page_id",
+          page_id: "00112233445566778899aabbccddeeff",
+        },
         url: `https://www.notion.so/${pageId}`,
       });
     }
     if (createdIds.some((pageId) => pathname === `/v1/pages/${pageId}`)) {
       const pageId = pathname.split("/").at(-1);
+      const index = createdIds.indexOf(pageId);
       return jsonResponse({
         object: "page",
         id: pageId,
+        parent: {
+          type: "page_id",
+          page_id: "00112233445566778899aabbccddeeff",
+        },
+        properties: {
+          title: {
+            type: "title",
+            title: [
+              {
+                plain_text: `[Git Mirror] ${index === 0 ? "Project Intro" : "Project Detail"}`,
+              },
+            ],
+          },
+        },
         url: `https://www.notion.so/${pageId}`,
       });
     }
@@ -172,6 +199,98 @@ test("Notion provisioning creates pages and reuses them across setup sessions", 
   assert.deepEqual(
     createBodies.map((body) => body.parent.page_id),
     [parentPageId, parentPageId],
+  );
+});
+
+test("Notion provisioning rejects a cached page outside the selected parent", async () => {
+  const selectedParentId = "00112233445566778899aabbccddeeff";
+  const pageId = "11111111111111111111111111111111";
+  const fetchImpl = async () =>
+    jsonResponse({
+      object: "page",
+      id: pageId,
+      parent: {
+        type: "page_id",
+        page_id: "ffffffffffffffffffffffffffffffff",
+      },
+      properties: {
+        title: {
+          type: "title",
+          title: [{ plain_text: "[Git Mirror] Project Intro" }],
+        },
+      },
+      url: `https://www.notion.so/${pageId}`,
+    });
+
+  await assert.rejects(
+    provisionNotionMirrorPages({
+      token: "notion-token-for-test",
+      parentPageId: selectedParentId,
+      documents: [{ key: "intro", label: "Project Intro" }],
+      pageIdsByKey: new Map([["intro", pageId]]),
+      fetchImpl,
+    }),
+    /not a direct child/,
+  );
+});
+
+test("Notion provisioning rechecks a cached page title and mirror-only content", async () => {
+  const parentPageId = "00112233445566778899aabbccddeeff";
+  const pageId = "11111111111111111111111111111111";
+  const documents = [{ key: "intro", label: "Project Intro" }];
+  const fetchFor = ({ title, markdown }) => async (url) => {
+    const pathname = new URL(url).pathname;
+    if (pathname.endsWith("/markdown")) {
+      return jsonResponse({
+        object: "page_markdown",
+        id: pageId,
+        markdown,
+        truncated: false,
+        unknown_block_ids: [],
+      });
+    }
+    return jsonResponse({
+      object: "page",
+      id: pageId,
+      parent: {
+        type: "page_id",
+        page_id: parentPageId,
+      },
+      properties: {
+        title: {
+          type: "title",
+          title: [{ plain_text: title }],
+        },
+      },
+      url: `https://www.notion.so/${pageId}`,
+    });
+  };
+  const provision = (fetchImpl) =>
+    provisionNotionMirrorPages({
+      token: "notion-token-for-test",
+      parentPageId,
+      documents,
+      pageIdsByKey: new Map([["intro", pageId]]),
+      fetchImpl,
+    });
+
+  await assert.rejects(
+    provision(
+      fetchFor({
+        title: "[Git Mirror] Renamed",
+        markdown: "",
+      }),
+    ),
+    /expected mirror title/,
+  );
+  await assert.rejects(
+    provision(
+      fetchFor({
+        title: "[Git Mirror] Project Intro",
+        markdown: "Manual note",
+      }),
+    ),
+    /non-mirror content/,
   );
 });
 
@@ -409,15 +528,375 @@ test("Setup context reads the pinned workflow environment", () => {
   assert.equal(context.documents.length, 2);
 });
 
+test("Setup publishes initial content before storing the reusable GitHub secrets", async () => {
+  const target = temporaryRepository();
+  const context = loadSetupContext({ target });
+  const parentPageId = "00112233445566778899aabbccddeeff";
+  const events = [];
+  const createdIds = [
+    "11111111111111111111111111111111",
+    "22222222222222222222222222222222",
+  ];
+  let createIndex = 0;
+  const run = async (_command, args, options = {}) => {
+    const joined = args.join(" ");
+    events.push(joined);
+    if (joined.startsWith("auth status")) return { stdout: "", stderr: "" };
+    if (joined.startsWith("repo view")) {
+      return {
+        stdout: JSON.stringify({
+          nameWithOwner: "owner/repository",
+          visibility: "PRIVATE",
+          url: "https://github.com/owner/repository",
+        }),
+        stderr: "",
+      };
+    }
+    if (joined === "api user") {
+      return { stdout: JSON.stringify({ id: 42, login: "owner" }), stderr: "" };
+    }
+    if (joined.includes("--method PUT") && joined.includes("/environments/")) {
+      return { stdout: JSON.stringify({ name: context.environmentName }), stderr: "" };
+    }
+    if (
+      joined.startsWith("api repos/owner/repository/environments/") &&
+      joined.endsWith("/deployment-branch-policies")
+    ) {
+      return { stdout: JSON.stringify({ branch_policies: [] }), stderr: "" };
+    }
+    if (joined.includes("--method POST") && joined.includes("deployment-branch-policies")) {
+      return { stdout: JSON.stringify({ id: 12, name: context.canonicalBranch }), stderr: "" };
+    }
+    if (joined.startsWith("secret set")) {
+      assert.ok(options.input);
+      return { stdout: "", stderr: "" };
+    }
+    if (joined.includes("/secrets")) {
+      return {
+        stdout: JSON.stringify({
+          secrets: [{ name: "NOTION_TOKEN" }, { name: "NOTION_PAGE_IDS_JSON" }],
+        }),
+        stderr: "",
+      };
+    }
+    throw new Error(`Unexpected setup command: ${joined}`);
+  };
+  const fetchImpl = async (url, options) => {
+    const pathname = new URL(url).pathname;
+    if (pathname === "/v1/users/me") {
+      return jsonResponse({ object: "user", name: "Project Docs Test" });
+    }
+    if (pathname === "/v1/pages/00112233445566778899aabbccddeeff") {
+      return jsonResponse({
+        object: "page",
+        id: "00112233445566778899aabbccddeeff",
+        url: "https://www.notion.so/00112233445566778899aabbccddeeff",
+      });
+    }
+    if (pathname === "/v1/blocks/00112233445566778899aabbccddeeff/children") {
+      return jsonResponse({
+        object: "list",
+        results: [],
+        has_more: false,
+        next_cursor: null,
+      });
+    }
+    if (pathname === "/v1/pages" && options.method === "POST") {
+      const pageId = createdIds[createIndex];
+      createIndex += 1;
+      return jsonResponse({
+        object: "page",
+        id: pageId,
+        parent: {
+          type: "page_id",
+          page_id: parentPageId,
+        },
+        url: `https://www.notion.so/${pageId}`,
+      });
+    }
+    if (createdIds.some((pageId) => pathname === `/v1/pages/${pageId}`)) {
+      const pageId = pathname.split("/").at(-1);
+      const index = createdIds.indexOf(pageId);
+      return jsonResponse({
+        object: "page",
+        id: pageId,
+        parent: {
+          type: "page_id",
+          page_id: parentPageId,
+        },
+        properties: {
+          title: {
+            type: "title",
+            title: [
+              {
+                plain_text: `[Git Mirror] ${context.documents[index].label}`,
+              },
+            ],
+          },
+        },
+        url: `https://www.notion.so/${pageId}`,
+      });
+    }
+    if (createdIds.some((pageId) => pathname === `/v1/pages/${pageId}/markdown`)) {
+      const pageId = pathname.split("/").at(-2);
+      return jsonResponse({
+        object: "page_markdown",
+        id: pageId,
+        markdown: "",
+        truncated: false,
+        unknown_block_ids: [],
+      });
+    }
+    return jsonResponse({ message: "not found" }, { status: 404, statusText: "Not Found" });
+  };
+  const sourceSha = "f".repeat(40);
+
+  const result = await provisionProjectDocsSetup({
+    context,
+    notionToken: "setup-token",
+    parentPage: "https://www.notion.so/00112233445566778899aabbccddeeff",
+    publishInitialContent: true,
+    github: { run },
+    notion: { fetchImpl },
+    initialPublication: {
+      resolveSource: async ({ repository }) => {
+        events.push("initial-source");
+        assert.equal(repository, "owner/repository");
+        return {
+          sourceSha,
+          sourceSnapshot: {
+            projectConfig: {},
+            sourceMarkdownByPath: new Map(),
+          },
+          warningCount: 0,
+        };
+      },
+      verifySource: async ({ sourceSha: receivedSha }) => {
+        events.push("initial-source-confirmed");
+        assert.equal(receivedSha, sourceSha);
+      },
+      publishDocuments: async ({ pageIdsJson, sourceSha: receivedSha }) => {
+        events.push("initial-publish");
+        assert.equal(receivedSha, sourceSha);
+        assert.deepEqual(Object.keys(JSON.parse(pageIdsJson)), ["overview", "case-study"]);
+        return {
+          status: "published",
+          sourceSha,
+          documents: context.documents.map((document) => ({
+            label: document.label,
+            status: "Synced",
+          })),
+        };
+      },
+    },
+  });
+
+  assert.equal(result.publication.status, "published");
+  assert.equal(result.notion.pages.length, 2);
+  assert.ok(events.indexOf("initial-source") < events.indexOf("initial-publish"));
+  assert.ok(
+    events.indexOf("initial-source-confirmed") < events.indexOf("initial-publish"),
+  );
+  assert.ok(events.indexOf("initial-publish") < events.findIndex((event) => event.startsWith("secret set")));
+});
+
+test("Initial publication accepts only a clean canonical Git source", async () => {
+  const target = temporaryRepository();
+  const context = loadSetupContext({ target });
+  const sourceSha = "a".repeat(40);
+  const calls = [];
+  const run = async (command, args) => {
+    calls.push({ command, args });
+    const joined = args.join(" ");
+    if (joined === "rev-parse --show-toplevel") {
+      return { stdout: `${target}\n`, stderr: "" };
+    }
+    if (joined === "branch --show-current") {
+      return { stdout: `${context.canonicalBranch}\n`, stderr: "" };
+    }
+    if (joined.startsWith("status --porcelain=v1")) {
+      return { stdout: "", stderr: "" };
+    }
+    if (joined === "rev-parse HEAD") {
+      return { stdout: `${sourceSha}\n`, stderr: "" };
+    }
+    if (
+      command === "gh" &&
+      joined === "api repos/owner/repository/commits/release%2Fdocs --jq .sha"
+    ) {
+      return { stdout: `${sourceSha}\n`, stderr: "" };
+    }
+    if (command === "git" && args[0] === "show") {
+      const sourcePath = args[1].slice(sourceSha.length + 1);
+      if (sourcePath === context.configPath) {
+        return {
+          stdout: readFileSync(path.join(target, context.configPath), "utf8"),
+          stderr: "",
+        };
+      }
+      return { stdout: `# ${sourcePath}\n`, stderr: "" };
+    }
+    throw new Error(`Unexpected command: ${command} ${joined}`);
+  };
+  const validate = () => ({
+    issues: [],
+    errorCount: 0,
+    warningCount: 1,
+  });
+
+  const result = await resolveInitialPublicationSource({
+    context,
+    repository: "owner/repository",
+    run,
+    validate,
+  });
+
+  assert.equal(result.sourceSha, sourceSha);
+  assert.equal(result.sourceSnapshot.sourceMarkdownByPath.size, 2);
+  assert.equal(result.warningCount, 1);
+  assert.ok(calls.some((call) => call.args[0] === "status"));
+});
+
+test("Initial publication rejects a non-canonical or dirty document source", async () => {
+  const target = temporaryRepository();
+  const context = loadSetupContext({ target });
+  const validate = () => ({
+    issues: [],
+    errorCount: 0,
+    warningCount: 0,
+  });
+  const localSourceSha = "b".repeat(40);
+  const runFor =
+    ({ branch, dirty = "", remoteSourceSha = localSourceSha }) =>
+    async (command, args) => {
+      const joined = args.join(" ");
+      if (joined === "rev-parse --show-toplevel") {
+        return { stdout: `${target}\n`, stderr: "" };
+      }
+      if (joined === "branch --show-current") {
+        return { stdout: `${branch}\n`, stderr: "" };
+      }
+      if (joined.startsWith("status --porcelain=v1")) {
+        return { stdout: dirty, stderr: "" };
+      }
+      if (joined === "rev-parse HEAD") {
+        return { stdout: `${localSourceSha}\n`, stderr: "" };
+      }
+      if (command === "gh" && joined.includes("commits/release%2Fdocs")) {
+        return { stdout: `${remoteSourceSha}\n`, stderr: "" };
+      }
+      throw new Error(`Unexpected Git command: ${joined}`);
+    };
+
+  await assert.rejects(
+    resolveInitialPublicationSource({
+      context,
+      repository: "owner/repository",
+      run: runFor({ branch: "feature/docs" }),
+      validate,
+    }),
+    /checked-out branch/,
+  );
+  await assert.rejects(
+    resolveInitialPublicationSource({
+      context,
+      repository: "owner/repository",
+      run: runFor({
+        branch: context.canonicalBranch,
+        dirty: " M docs/Project_Overview.md\n",
+      }),
+      validate,
+    }),
+    /match the checked-out commit/,
+  );
+  await assert.rejects(
+    resolveInitialPublicationSource({
+      context,
+      repository: "owner/repository",
+      run: runFor({
+        branch: context.canonicalBranch,
+        remoteSourceSha: "e".repeat(40),
+      }),
+      validate,
+    }),
+    /match the current GitHub/,
+  );
+});
+
+test("Initial publication rechecks the canonical source immediately before writing", async () => {
+  const target = temporaryRepository();
+  const context = loadSetupContext({ target });
+  const sourceSha = "9".repeat(40);
+  const run = async (command, args) => {
+    const joined = args.join(" ");
+    if (joined === "branch --show-current") {
+      return { stdout: `${context.canonicalBranch}\n`, stderr: "" };
+    }
+    if (joined === "rev-parse HEAD") {
+      return { stdout: `${sourceSha}\n`, stderr: "" };
+    }
+    if (command === "gh" && joined.includes("commits/release%2Fdocs")) {
+      return { stdout: `${"8".repeat(40)}\n`, stderr: "" };
+    }
+    throw new Error(`Unexpected source confirmation command: ${joined}`);
+  };
+
+  await assert.rejects(
+    verifyInitialPublicationSourceStillCurrent({
+      context,
+      repository: "owner/repository",
+      sourceSha,
+      run,
+    }),
+    /changed during setup/,
+  );
+});
+
+test("Initial publication reuses the guarded publisher with Git source metadata", async () => {
+  const target = temporaryRepository();
+  const context = loadSetupContext({ target });
+  const sourceSha = "c".repeat(40);
+  let received;
+  const result = await publishInitialProjectDocuments({
+    context,
+    notionToken: "setup-token",
+    pageIdsJson: '{"overview":"11111111111111111111111111111111"}',
+    repository: "owner/repository",
+    sourceSha,
+    sourceSnapshot: {
+      projectConfig: {},
+      sourceMarkdownByPath: new Map(),
+    },
+    publisher: async (input) => {
+      received = input;
+      return {
+        dryRun: false,
+        documents: [{ label: "Project Intro", status: "Synced" }],
+      };
+    },
+  });
+
+  assert.equal(received.environment.GITHUB_REPOSITORY, "owner/repository");
+  assert.equal(received.environment.GITHUB_SHA, sourceSha);
+  assert.equal(received.environment.NOTION_TOKEN, "setup-token");
+  assert.equal(received.dryRun, false);
+  assert.equal(result.status, "published");
+  assert.equal(result.documents.length, 1);
+});
+
 test("Loopback wizard enforces origin checks and does not persist the submitted token", async () => {
   const target = temporaryRepository();
   const received = [];
   const setupProvisioner = async (input) => {
-    received.push(input.notionToken);
+    received.push({
+      notionToken: input.notionToken,
+      publishInitialContent: input.publishInitialContent,
+    });
     return {
       environment: { environmentName: input.context.environmentName, reviewer: "owner" },
       github: { nameWithOwner: "owner/repository", url: "", visibility: "PRIVATE" },
       notion: { botName: "bot", parentUrl: "", pages: [] },
+      publication: { status: "published", sourceSha: "d".repeat(40), documents: [] },
       secrets: { secretNames: ["NOTION_TOKEN", "NOTION_PAGE_IDS_JSON"] },
     };
   };
@@ -442,6 +921,7 @@ test("Loopback wizard enforces origin checks and does not persist the submitted 
     assert.match(pageResponse.headers.get("content-security-policy"), /default-src 'none'/);
     assert.equal(pageResponse.headers.get("cache-control"), "no-store, max-age=0");
     assert.ok(!html.includes("submitted-secret"));
+    assert.match(html, /publishInitialContent/);
 
     const rejected = await fetch(`${wizard.url}setup`, {
       method: "POST",
@@ -486,11 +966,76 @@ test("Loopback wizard enforces origin checks and does not persist the submitted 
       body: JSON.stringify({
         notionToken: "submitted-secret",
         parentPage: "https://www.notion.so/00112233445566778899aabbccddeeff",
+        publishInitialContent: true,
         acknowledgePolicyReplacement: true,
       }),
     });
     assert.equal(accepted.status, 200);
-    assert.deepEqual(received, ["submitted-secret"]);
+    assert.deepEqual(received, [
+      {
+        notionToken: "submitted-secret",
+        publishInitialContent: true,
+      },
+    ]);
+  } finally {
+    await new Promise((resolve) => wizard.server.close(resolve));
+  }
+});
+
+test("Loopback wizard clears cached page IDs when the parent page changes", async () => {
+  const target = temporaryRepository();
+  const observedMapSizes = [];
+  let attempt = 0;
+  const setupProvisioner = async (input) => {
+    observedMapSizes.push(input.pageIdsByKey.size);
+    attempt += 1;
+    if (attempt === 1) {
+      input.pageIdsByKey.set("overview", "11111111111111111111111111111111");
+      throw new Error("forced retry");
+    }
+    return {
+      environment: {
+        environmentName: input.context.environmentName,
+        reviewer: "owner",
+        reviewerProtection: "required",
+      },
+      github: { nameWithOwner: "owner/repository", url: "", visibility: "PRIVATE" },
+      notion: { botName: "bot", parentUrl: "", pages: [] },
+      publication: { status: "skipped", sourceSha: "", documents: [] },
+      secrets: { secretNames: ["NOTION_TOKEN", "NOTION_PAGE_IDS_JSON"] },
+    };
+  };
+  const wizard = await startSetupWizard({
+    target,
+    openBrowser: false,
+    setupProvisioner,
+  });
+  const origin = new URL(wizard.url).origin;
+  const submit = (parentPage) =>
+    fetch(`${wizard.url}setup`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Origin: origin,
+      },
+      body: JSON.stringify({
+        notionToken: "submitted-secret",
+        parentPage,
+        publishInitialContent: false,
+        acknowledgePolicyReplacement: true,
+      }),
+    });
+
+  try {
+    const first = await submit(
+      "https://www.notion.so/00112233445566778899aabbccddeeff",
+    );
+    assert.equal(first.status, 500);
+    const second = await submit(
+      "https://www.notion.so/ffeeddccbbaa99887766554433221100",
+    );
+    assert.equal(second.status, 200);
+    assert.deepEqual(observedMapSizes, [0, 0]);
   } finally {
     await new Promise((resolve) => wizard.server.close(resolve));
   }

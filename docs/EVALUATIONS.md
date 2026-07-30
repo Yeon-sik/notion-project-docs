@@ -109,6 +109,17 @@ Expected:
 - Opens a loopback-only browser session.
 - Requires only the Notion integration token and connected parent page URL.
 - Creates one dedicated child page per configured document.
+- Shows the initial-content publication option as selected by default and
+  explains that it is a one-time connection operation.
+- Before initial content publication, requires the repository root, validated
+  and tracked documents, a clean canonical checkout, and local `HEAD` equal to
+  the current GitHub canonical-branch tip; confirms that source again
+  immediately before the first body write.
+- Reuses the normal full-page preflight, replacement, source fingerprint, and
+  response verification path, renders from the verified Git object rather than
+  mutable working-tree files, then reports the source commit and document count.
+- Preserves the previous connection-only behavior when the initial-content
+  option is cleared.
 - Sends both GitHub secrets through stdin and never writes credentials or page
   IDs to the repository, logs, command arguments, or browser storage.
 - Retries without a reviewer only for GitHub's specific required-reviewer plan
@@ -118,7 +129,10 @@ Expected:
   device flow, gives immediate visible guidance, and times out after five
   minutes.
 - Preserves page mappings in memory for a same-session retry and safely
-  discovers blank or fingerprinted `[Git Mirror]` pages after a process restart.
+  discovers blank or fingerprinted `[Git Mirror]` pages after a process
+  restart. Changing the parent page or integration token clears the in-memory
+  map, and every retained page is verified for the selected parent, exact
+  mirror title, complete Markdown, and blank-or-fingerprinted content.
 
 ## Negative cases
 

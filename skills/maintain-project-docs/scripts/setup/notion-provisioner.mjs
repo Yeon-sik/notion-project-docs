@@ -17,6 +17,15 @@ function mirrorPageTitle(document) {
   return `[Git Mirror] ${document.label}`;
 }
 
+function notionPageTitle(page) {
+  const titleProperty = Object.values(page?.properties ?? {}).find(
+    (property) => property?.type === "title" && Array.isArray(property.title),
+  );
+  return (titleProperty?.title ?? [])
+    .map((item) => item?.plain_text ?? item?.text?.content ?? "")
+    .join("");
+}
+
 function delay(milliseconds) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
@@ -118,6 +127,35 @@ export async function preflightNotionParent({
   };
 }
 
+async function readReusableMirrorMarkdown({
+  token,
+  pageId,
+  document,
+  fetchImpl,
+}) {
+  const markdown = await notionRequest({
+    token,
+    pathname: `/v1/pages/${pageId}/markdown`,
+    fetchImpl,
+  });
+  if (
+    markdown?.object !== "page_markdown" ||
+    typeof markdown.id !== "string" ||
+    normalizedPageId(markdown.id) !== normalizedPageId(pageId) ||
+    typeof markdown.markdown !== "string" ||
+    markdown.truncated ||
+    (markdown.unknown_block_ids?.length ?? 0) > 0
+  ) {
+    throw new Error(`Existing Notion mirror candidate is incomplete for ${document.label}.`);
+  }
+  if (markdown.markdown.trim() && !SOURCE_FINGERPRINT_PATTERN.test(markdown.markdown)) {
+    throw new Error(
+      `Existing Notion page "${mirrorPageTitle(document)}" contains non-mirror content and will not be reused.`,
+    );
+  }
+  return markdown;
+}
+
 async function reusableMirrorPages({
   token,
   parentPageId,
@@ -174,26 +212,12 @@ async function reusableMirrorPages({
     if (matches.length === 0) continue;
 
     const pageId = matches[0];
-    const markdown = await notionRequest({
+    await readReusableMirrorMarkdown({
       token,
-      pathname: `/v1/pages/${pageId}/markdown`,
+      pageId,
+      document,
       fetchImpl,
     });
-    if (
-      markdown?.object !== "page_markdown" ||
-      typeof markdown.id !== "string" ||
-      normalizedPageId(markdown.id) !== pageId ||
-      typeof markdown.markdown !== "string" ||
-      markdown.truncated ||
-      (markdown.unknown_block_ids?.length ?? 0) > 0
-    ) {
-      throw new Error(`Existing Notion mirror candidate is incomplete for ${document.label}.`);
-    }
-    if (markdown.markdown.trim() && !SOURCE_FINGERPRINT_PATTERN.test(markdown.markdown)) {
-      throw new Error(
-        `Existing Notion page "${title}" contains non-mirror content and will not be reused.`,
-      );
-    }
     reusable.set(document.key, pageId);
   }
   return reusable;
@@ -269,6 +293,26 @@ export async function provisionNotionMirrorPages({
       if (page?.object !== "page" || page.archived || page.in_trash) {
         throw new Error(`Created Notion page is unavailable for ${document.label}.`);
       }
+      if (notionPageTitle(page) !== mirrorPageTitle(document)) {
+        throw new Error(
+          `Notion page for ${document.label} does not have the expected mirror title.`,
+        );
+      }
+      const actualParentPageId =
+        page.parent?.type === "page_id" && typeof page.parent.page_id === "string"
+          ? normalizedPageId(page.parent.page_id)
+          : "";
+      if (actualParentPageId !== normalizedPageId(parentPageId)) {
+        throw new Error(
+          `Notion page for ${document.label} is not a direct child of the selected parent page.`,
+        );
+      }
+      await readReusableMirrorMarkdown({
+        token,
+        pageId,
+        document,
+        fetchImpl,
+      });
       return {
         key: document.key,
         label: document.label,

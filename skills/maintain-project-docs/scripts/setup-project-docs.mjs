@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { createServer } from "node:http";
 import path from "node:path";
@@ -8,6 +8,7 @@ import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 import { loginToGitHub } from "./setup/github-provisioner.mjs";
+import { parseNotionPageId } from "./setup/notion-provisioner.mjs";
 import {
   loadSetupContext,
   provisionProjectDocsSetup,
@@ -183,6 +184,7 @@ export async function startSetupWizard({
   const sessionPath = `/session/${sessionToken}/`;
   const html = renderHtml(context, cspNonce);
   const pageIdsByKey = new Map();
+  let pageBinding = "";
   let busy = false;
   let expectedOrigin = "";
   let shutdownTimer;
@@ -237,6 +239,7 @@ export async function startSetupWizard({
         typeof payload.notionToken === "string" ? payload.notionToken.trim() : "";
       const parentPage =
         typeof payload.parentPage === "string" ? payload.parentPage.trim() : "";
+      const publishInitialContent = payload.publishInitialContent === true;
       if (!notionToken || notionToken.length > 512) {
         throw Object.assign(new Error("Notion integration token is required."), {
           statusCode: 400,
@@ -254,10 +257,21 @@ export async function startSetupWizard({
         );
       }
 
+      const nextPageBinding = createHash("sha256")
+        .update(notionToken)
+        .update(":")
+        .update(parseNotionPageId(parentPage))
+        .digest("hex");
+      if (pageBinding && pageBinding !== nextPageBinding) {
+        pageIdsByKey.clear();
+      }
+      pageBinding = nextPageBinding;
+
       const result = await setupProvisioner({
         context,
         notionToken,
         parentPage,
+        publishInitialContent,
         pageIdsByKey,
       });
       sendJson(response, 200, result);
@@ -296,6 +310,7 @@ export async function startSetupWizard({
     clearTimeout(sessionTimeout);
     if (shutdownTimer) clearTimeout(shutdownTimer);
     pageIdsByKey.clear();
+    pageBinding = "";
   });
 
   if (openBrowser) openLocalBrowser(url);

@@ -50,9 +50,12 @@ flowchart LR
 ```
 
 No Notion write occurs on pull requests, non-canonical pushes, local dry runs,
-or ordinary skill use. The default `manual` mode requires workflow dispatch,
-the exact `PUBLISH` confirmation and the configured canonical branch. It also
-uses protected-environment approval when the repository and GitHub plan support
+or ordinary skill use. The one explicit exception is the setup wizard's
+checked one-time initial publication, which requires a clean, tracked,
+validated canonical-branch source and full Notion preflight. After connection,
+the default `manual` mode requires workflow dispatch, the exact `PUBLISH`
+confirmation and the configured canonical branch. It also uses
+protected-environment approval when the repository and GitHub plan support
 required reviewers. Repositories may explicitly choose `on-main-push` to
 publish matching canonical-branch merges automatically.
 
@@ -64,7 +67,7 @@ publish matching canonical-branch merges automatically.
 - a non-overwriting repository installer with a dry-run default;
 - a local, one-time setup wizard that creates dedicated Notion mirror pages
   and configures protected GitHub environment secrets without persisting
-  credentials;
+  credentials, with an explicit initial-content publication option;
 - a dependency-free validator for structure, placeholders, links, local paths,
   and common credential formats;
 - a deterministic Notion Markdown publisher with full-page preflight,
@@ -96,8 +99,11 @@ node skills/maintain-project-docs/scripts/install-project-docs.mjs \
 After reviewing the plan, add `--apply`. Differing existing files stop the
 installation before any new file is written.
 
-Then create one Notion parent page, connect the internal Notion integration to
-that page, and run the local setup wizard:
+Use `$maintain-project-docs` to create and validate the configured Markdown
+files, then review and commit the documents, configuration, runtime, templates,
+and workflow to the configured canonical branch. Create one Notion parent
+page, connect the internal Notion integration to that page, and run the local
+setup wizard:
 
 ```bash
 cd /path/to/repository
@@ -109,25 +115,26 @@ the connected parent page URL. It creates or safely reuses one dedicated child
 page per configured document, restricts the protected environment to the
 canonical branch, configures the current GitHub user as reviewer in `manual`
 mode when the repository plan supports required reviewers, and stores
-`NOTION_TOKEN` plus `NOTION_PAGE_IDS_JSON` through GitHub CLI stdin. When GitHub
-rejects required reviewers with its plan-specific HTTP 422 response, the wizard
-retries with only the canonical-branch policy, omitting all unsupported
-protection-rule fields, and shows a reduced-protection warning. If GitHub CLI
-authentication has expired, **GitHub login/refresh** starts the browser device
-flow, copies the one-time code to the clipboard, and times out after five
-minutes instead of waiting indefinitely. No token or page map is written to
-the repository or browser storage.
+`NOTION_TOKEN` plus `NOTION_PAGE_IDS_JSON` through GitHub CLI stdin. Its checked
+initial-publication option immediately fills the pages only when the source is
+clean, tracked, validated, checked out on the canonical branch, and equal to
+the current GitHub branch tip. Clear the option for connection-only setup. When GitHub rejects required reviewers with
+its plan-specific HTTP 422 response, the wizard retries with only the
+canonical-branch policy, omitting all unsupported protection-rule fields, and
+shows a reduced-protection warning. If GitHub CLI authentication has expired,
+**GitHub login/refresh** starts the browser device flow, copies the one-time
+code to the clipboard, and times out after five minutes instead of waiting
+indefinitely. No token or page map is written to the repository or browser
+storage.
 
 After setup:
 
-1. Use `$maintain-project-docs` to create the configured Markdown files.
-2. Review and commit the documents, configuration, runtime, templates, and
-   workflow together.
-3. For `manual`, run `operation: validate`, then publish with
+1. Verify the initial Notion pages, source revision links, and fingerprints.
+2. For later `manual` updates, run `operation: validate`, then publish with
    `operation: publish` and confirmation `PUBLISH`. Approve the environment
    when required reviewers are supported and configured.
-4. For `on-main-push`, merge a reviewed document change to the canonical
-   branch; the workflow publishes automatically.
+3. For later `on-main-push` updates, merge a reviewed document change to the
+   canonical branch; the workflow publishes automatically.
 
 Manual GitHub and Notion configuration remains documented in the operations
 runbook for environments where GitHub CLI or browser launch is unavailable.
