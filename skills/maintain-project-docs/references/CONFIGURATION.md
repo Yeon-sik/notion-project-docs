@@ -41,13 +41,37 @@ node <skill-directory>/scripts/setup-project-docs.mjs
 The command opens an ephemeral browser UI on a random `127.0.0.1` port. It
 reads the installed configuration and workflow, creates one dedicated Notion
 child page per configured document, configures the protected GitHub
-environment, and stores `NOTION_TOKEN` plus `NOTION_PAGE_IDS_JSON`.
+environment, and stores `NOTION_TOKEN` plus `NOTION_PAGE_IDS_JSON`. By default,
+the checked **initial content publication** option also fills those pages with
+the current configured Markdown during the same connection.
 Use `--target <repository>` only when the current working directory is not the
 target repository.
 
+Initial content publication uses the same full-page preflight, replacement,
+source-fingerprint, and response checks as the GitHub publisher. It reads the
+published Markdown from the verified Git commit rather than rereading mutable
+working-tree files and rechecks local `HEAD` plus the GitHub canonical tip
+immediately before the first body write. To keep Git Markdown canonical, it
+stops before setup writes when:
+
+- the target is not the Git repository root;
+- the checked-out branch is not `canonicalBranch`;
+- local `HEAD` does not match the current GitHub canonical-branch tip;
+- the configuration or a configured document is untracked or differs from
+  `HEAD`; or
+- document validation reports an error.
+
+Clear the option to configure pages and secrets without publishing a body.
+After the one-time initial publication, every update follows `publicationMode`
+through GitHub Actions.
+
 On rerun, it reuses an exact `[Git Mirror] <document label>` child only when
 the page is blank or contains a publisher source fingerprint. Duplicate names
-or non-mirror content stop setup before that page is reused.
+or non-mirror content stop setup before that page is reused. Same-session page
+IDs are retained only while the normalized parent page and integration token
+remain unchanged. Every retained page must still be a direct child of the
+selected parent, keep the exact mirror title, and remain blank or contain a
+publisher source fingerprint.
 
 The wizard requires GitHub CLI authentication and repository administration
 permission. It does not write credentials or page IDs to the target

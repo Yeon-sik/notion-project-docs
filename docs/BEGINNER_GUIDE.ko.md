@@ -25,7 +25,7 @@ Markdown 수정 → Pull Request 검토 → main 병합 → 검증 → Notion �
 다음 네 가지가 필요합니다.
 
 1. 문서를 관리할 GitHub 저장소와 `main` 브랜치
-2. Notion 워크스페이스와 문서 미러로 쓸 빈 페이지 2개 이상
+2. Notion 워크스페이스와 문서 미러를 담을 부모 페이지 1개
 3. GitHub 저장소의 Settings를 수정할 권한
 4. Codex를 사용할 수 있는 환경
 
@@ -84,6 +84,10 @@ docs/templates/                          문서 시작용 템플릿
 
 ### 가장 간단한 연결 방법
 
+Wizard에서 본문까지 즉시 게시하려면 먼저 `$maintain-project-docs`로 설정된
+실제 문서를 작성·검증하고, 설치 파일과 함께 기준 브랜치에 커밋한 상태여야
+합니다.
+
 Notion integration을 만든 뒤 프로젝트 문서 미러를 담을 부모 페이지 하나에
 integration을 연결합니다. 개별 미러 페이지를 만들거나 페이지 ID를 복사하지
 말고 다음 Setup Wizard를 실행합니다.
@@ -99,6 +103,12 @@ node "$env:USERPROFILE\.codex\skills\maintain-project-docs\scripts\setup-project
 GitHub 사용자를 required reviewer로 지정합니다. 저장소와 GitHub 요금제가 이를
 지원하지 않아 전용 HTTP 422를 반환하면 보호 규칙 필드를 모두 생략하고 기준
 브랜치 제한만 구성한 뒤 완료 화면에 보호 수준 경고를 표시합니다.
+
+기본 선택된 **최초 본문 즉시 게시**를 유지하면 Wizard가 페이지 생성 직후
+설정된 문서 본문도 채웁니다. 단, 대상 경로가 Git 저장소 루트이고 현재 브랜치가
+설정된 기준 브랜치이며, 설정과 문서가 Git에 추적·커밋되어 있고 문서 검증을
+통과하며 그 커밋이 GitHub 기준 브랜치의 현재 끝과 같아야 합니다. 아직 문서를
+게시하지 않고 연결만 구성하려면 이 선택을 해제합니다.
 
 GitHub CLI 로그인이 만료됐다면 화면의 **GitHub 로그인/갱신**을 먼저
 실행합니다. 일회용 코드는 클립보드에 복사되고 GitHub 인증 창이 열립니다.
@@ -174,10 +184,15 @@ GitHub Actions가 해당 페이지를 읽거나 수정할 수 없습니다.
 자동 모드에서 required reviewer를 남겨 두면 자동 작업이 승인 대기 상태가 됩니다.
 자동 발행을 원한다면 reviewer는 제거하고, `main` 브랜치 제한과 Secrets는 유지하세요.
 
-## 7. 처음 발행하기
+## 7. 처음 발행 확인하기
 
-먼저 대상 저장소에서 문서와 설정을 커밋·push합니다. GitHub의 **Actions** 탭에서
-`Validate and publish project docs`를 열어 아래 순서로 실행합니다.
+Setup Wizard에서 **최초 본문 즉시 게시**를 유지했다면 생성된 Notion 페이지를
+열어 본문, Git 원본 링크, source fingerprint가 있는지 확인합니다. 이 최초
+1회만 로컬 Wizard가 게시하며, 이후 변경은 GitHub Actions 정책을 따릅니다.
+
+Wizard에서 초기 게시를 해제했다면 대상 저장소의 문서와 설정을 기준 브랜치에
+커밋·push한 뒤 GitHub의 **Actions** 탭에서 `Validate and publish project
+docs`를 열어 아래 순서로 실행합니다.
 
 1. `operation`을 `validate`로 선택해 검증만 실행합니다.
 2. 성공하면 다시 실행합니다.
@@ -225,6 +240,7 @@ $maintain-project-docs 설정된 문서를 검증하고, GitHub Actions에서
 | --- | --- |
 | `publish`가 실행되지 않음 | PR 또는 `main` 이외 브랜치에서는 정상적으로 검증만 실행됩니다. 자동 모드는 `main` 병합인지 확인하세요. |
 | 자동 발행이 승인 대기 상태 | `on-main-push`인데 Environment required reviewer가 남아 있는지 확인하세요. |
+| Wizard의 초기 본문 게시가 중단됨 | 현재 체크아웃이 기준 브랜치인지, 설정과 문서가 Git에 추적·커밋·push되어 GitHub의 현재 기준 브랜치와 같은지, 문서 검증 오류가 없는지 확인하세요. |
 | Notion 페이지를 찾을 수 없음 | 페이지를 integration에 공유했는지, `NOTION_PAGE_IDS_JSON` 키가 설정 파일 키와 같은지 확인하세요. |
 | 발행이 전부 실패함 | 두 대상 페이지 모두 읽을 수 있어야 합니다. 하나라도 접근할 수 없으면 안전을 위해 아무 페이지도 수정하지 않습니다. |
 | 설치기가 충돌을 표시함 | 기존 파일을 자동으로 덮어쓰지 않습니다. 새 템플릿과 현재 파일을 비교해 필요한 부분만 수동으로 합치세요. |

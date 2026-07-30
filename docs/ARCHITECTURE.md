@@ -15,7 +15,7 @@
 | Codex plugin | Discover the workflow and guide evidence-based writing |
 | Skill assets | Supply templates, configuration defaults, and workflow source |
 | Repository installer | Pin a reviewed runtime into the target repository |
-| Local setup wizard | Provision Notion pages and GitHub environment secrets in one ephemeral loopback session |
+| Local setup wizard | Provision Notion pages and GitHub environment secrets, with an explicit guarded initial-content publication option |
 | Target configuration | Define canonical branch, publication mode, document keys, paths, and required sections |
 | GitHub Actions | Validate automatically and publish by the selected manual or canonical-push policy |
 | Notion API | Read and replace dedicated mirror page content |
@@ -23,7 +23,13 @@
 The plugin is intentionally skills-only. It does not host a service or proxy
 credentials. The optional setup UI binds only to `127.0.0.1`, keeps setup
 state in memory, and closes after success or timeout. GitHub Actions talks
-directly to Notion during publication.
+directly to Notion during normal publication. When initial publication is
+selected, the local wizard uses the same publisher only after confirming a
+clean, tracked, validated canonical-branch source. It renders from the verified
+Git object snapshot, so a later working-tree edit cannot be mislabeled with the
+earlier source commit. Immediately before body publication, it confirms the
+checked-out branch, local `HEAD`, and GitHub canonical tip still match that
+snapshot.
 
 ## Installed runtime
 
@@ -57,6 +63,12 @@ service failures.
 - Setup credentials are not placed in URLs, command arguments, repository
   files, logs, or browser storage.
 - No committed tokens or page IDs.
+- One-time local initial publication requires an explicit selected option, a
+  clean canonical checkout, tracked validated documents, and full destination
+  preflight.
+- Same-session setup retries bind cached page IDs to the normalized parent and
+  integration token. Page verification rejects targets outside that parent,
+  renamed pages, incomplete Markdown, and non-mirror content.
 - Read-only GitHub token permissions.
 - Branch restriction enforced inside the publisher.
 - Manual workflow dispatch and exact confirmation string in `manual` mode.

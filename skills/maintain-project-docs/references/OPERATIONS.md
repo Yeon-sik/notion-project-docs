@@ -13,8 +13,11 @@
 Create a Notion integration with read-content and update-content capabilities.
 Create one parent page dedicated to project-doc mirrors and connect it to the
 integration. The setup wizard creates one dedicated child page per configured
-document. Do not put manual notes, unrelated child pages, or databases inside
-the generated mirror pages.
+document. Its default checked initial-publication option also writes the
+validated, committed canonical-branch Markdown to each child immediately.
+Clear that option when connection setup must not publish content. Do not put
+manual notes, unrelated child pages, or databases inside the generated mirror
+pages.
 
 If the setup wizard cannot be used, create and share each mirror page manually
 and record its ID in `NOTION_PAGE_IDS_JSON`.
@@ -27,10 +30,10 @@ branches to the configured canonical branch.
 `publicationMode` controls how a validated canonical revision is published.
 
 - `manual` is the default. Configure a required reviewer when the repository
-  and GitHub plan support it. Publication always requires `workflow_dispatch`,
-  `operation=publish`, the exact `PUBLISH` confirmation, and the configured
-  canonical branch. It additionally requires environment approval when a
-  reviewer is configured.
+  and GitHub plan support it. After the optional one-time Wizard publication,
+  publication always requires `workflow_dispatch`, `operation=publish`, the
+  exact `PUBLISH` confirmation, and the configured canonical branch. It
+  additionally requires environment approval when a reviewer is configured.
 - `on-main-push` is opt-in. Do not configure a required reviewer, because that
   would make every automatic run wait for manual approval. A matching push or
   merge to the configured canonical branch publishes after validation. The
@@ -86,15 +89,18 @@ runtime behavior.
 
 ## First publication
 
-1. Review the Notion pages and ensure they contain no manual child content.
-2. Merge the complete runtime and documents to the canonical branch.
-3. Confirm the validation job passes.
-4. For `manual`, dispatch `validate`, then dispatch `publish` and enter
-   `PUBLISH`. Approve the environment when a required reviewer is configured.
-5. For `on-main-push`, confirm that the merge-triggered publish job completes
-   without an approval wait.
-6. Review the Actions summary, both Notion pages, source revision links, and
-   source fingerprints.
+1. Merge the complete runtime and documents to the canonical branch, check out
+   that branch, and confirm the configuration and documents are clean.
+2. Run the setup wizard. Leave initial publication selected to populate every
+   newly connected mirror page during setup, or clear it to keep setup
+   connection-only.
+3. Review every Notion page, source revision link, and source fingerprint.
+4. If initial publication was cleared, confirm the validation job passes. For
+   `manual`, dispatch `validate`, then dispatch `publish`, enter `PUBLISH`, and
+   approve the environment when a reviewer is configured. For
+   `on-main-push`, merge a matching document change or use the manual recovery
+   path.
+5. Use the configured GitHub Actions policy for all later content updates.
 
 ## Failure and recovery
 

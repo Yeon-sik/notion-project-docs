@@ -1,6 +1,6 @@
 ---
 name: maintain-project-docs
-description: Create, audit, or update evidence-grounded repository documentation and maintain a reviewed Git Markdown to Notion mirror. Use when Codex must prepare project overviews or technical case studies, refresh portfolio documentation from code and test evidence, validate publishable Markdown, install repository-local documentation automation, or diagnose a configured Notion publication workflow.
+description: Create, audit, or update evidence-grounded repository documentation and maintain a reviewed Git Markdown to Notion mirror. Use when Codex must prepare project overviews or technical case studies, refresh portfolio documentation from code and test evidence, validate publishable Markdown, install or connect repository-local documentation automation, configure guarded initial Notion publication, or diagnose a configured Notion publication workflow.
 ---
 
 # Maintain Project Docs
@@ -69,8 +69,15 @@ or changing the runtime bundle.
    ```
 
    The wizard uses the current working directory as the target. `--target`
-   remains an optional override for automation. The wizard performs external
-   writes. Do not launch it for a local-only installation request.
+   remains an optional override for automation. Its default checked option
+   publishes the configured document bodies immediately after connection.
+   This one-time initial publication is allowed only when the target is the
+   repository root, the configured documents pass validation, all source
+   files are Git-tracked and clean, and the checked-out branch is the
+   configured canonical branch at the current GitHub tip. Clearing the option
+   preserves page-and-secret setup without a content write. The wizard
+   performs external writes. Do not launch it for a local-only installation
+   request.
 
 ## Maintain the Notion mirror
 
@@ -78,12 +85,12 @@ or changing the runtime bundle.
 - Permit writes only from the configured canonical branch.
 - Keep `publicationMode` at the safe `manual` default unless the repository
   owner explicitly chooses `on-main-push`.
-- In `manual` mode, require `workflow_dispatch`, the exact `PUBLISH`
-  confirmation, and protected-environment approval when required reviewers are
-  available for the repository and GitHub plan. If GitHub returns its specific
-  plan-limit 422 for required reviewers, retry with only the deployment branch
-  policy after the wizard's policy acknowledgement and report the reduced
-  protection.
+- After initial connection, in `manual` mode require `workflow_dispatch`, the
+  exact `PUBLISH` confirmation, and protected-environment approval when
+  required reviewers are available for the repository and GitHub plan. If
+  GitHub returns its specific plan-limit 422 for required reviewers, retry with
+  only the deployment branch policy after the wizard's policy acknowledgement
+  and report the reduced protection.
 - Recover expired GitHub CLI authentication through the browser and clipboard
   device flow with a bounded timeout; do not leave the setup UI waiting
   silently.
@@ -93,6 +100,9 @@ or changing the runtime bundle.
   that would turn the automatic job back into a manual approval.
 - Validate all secrets, document paths, page IDs, and read access before the
   first write.
+- Treat the wizard's explicitly selected initial publication as a one-time
+  connection operation. After setup, require the configured GitHub publication
+  policy for every content update.
 - Preflight every page. Abort before writing if any page is missing,
   inaccessible, truncated, or contains unknown blocks.
 - Replace only dedicated mirror pages.

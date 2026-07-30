@@ -251,7 +251,8 @@
         <h1>Notion Project Docs 설정</h1>
         <p>
           토큰과 부모 페이지 URL만 입력하면 전용 미러 페이지와 GitHub Environment Secret을
-          구성합니다. 입력값은 이 컴퓨터의 일회성 서버에서만 처리됩니다.
+          구성하고, 선택하면 검증된 Git 문서 본문도 즉시 게시합니다. 입력값은 이 컴퓨터의
+          일회성 서버에서만 처리됩니다.
         </p>
       </header>
 
@@ -307,6 +308,21 @@
           </label>
 
           <label class="acknowledgement">
+            <input
+              id="publish-initial-content"
+              name="publishInitialContent"
+              type="checkbox"
+              checked
+            />
+            <span>
+              연결 직후 설정된 문서 본문을 전용 미러 페이지에 최초 1회 게시합니다. 현재
+              체크아웃이 기준 브랜치여야 하며, 설정과 문서는 Git에 커밋되어 있고 검증을
+              통과해야 하며 GitHub의 현재 기준 브랜치와 같은 커밋이어야 합니다. 이후
+              변경은 기존 GitHub Actions 게시 정책을 따릅니다.
+            </span>
+          </label>
+
+          <label class="acknowledgement">
             <input id="acknowledge" name="acknowledge" type="checkbox" required />
             <span>
               전용 GitHub Environment의 reviewer와 배포 브랜치 정책을 현재 설정에 맞게 구성하고,
@@ -317,7 +333,7 @@
         </section>
 
         <div class="actions">
-          <button id="submit-button" type="submit">연결 검증 및 설정</button>
+          <button id="submit-button" type="submit">연결 및 페이지 생성</button>
           <button id="login-button" class="secondary" type="button">GitHub 로그인/갱신</button>
           <div id="status" role="status" aria-live="polite"></div>
         </div>
@@ -338,6 +354,9 @@
       const loginButton = document.querySelector("#login-button");
       const status = document.querySelector("#status");
       const tokenInput = document.querySelector("#notion-token");
+      const publishInitialContentInput = document.querySelector(
+        "#publish-initial-content",
+      );
 
       document.querySelector("#target").textContent = bootstrap.target;
       document.querySelector("#branch").textContent = bootstrap.canonicalBranch;
@@ -392,12 +411,17 @@
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
         setBusy(true);
-        setStatus("GitHub와 Notion 접근권한을 검증하고 설정하는 중입니다.");
+        setStatus(
+          publishInitialContentInput.checked
+            ? "GitHub와 Notion을 설정하고 검증된 문서 본문을 게시하는 중입니다."
+            : "GitHub와 Notion 접근권한을 검증하고 설정하는 중입니다.",
+        );
         document.querySelector("#result").classList.remove("visible");
 
         const payload = {
           notionToken: tokenInput.value,
           parentPage: document.querySelector("#parent-page").value,
+          publishInitialContent: publishInitialContentInput.checked,
           acknowledgePolicyReplacement: document.querySelector("#acknowledge").checked,
         };
 
@@ -406,7 +430,11 @@
           setStatus("설정이 완료됐습니다. 이 창은 잠시 후 연결이 종료됩니다.", "success");
           document.querySelector("#result-summary").textContent =
             `${result.github.nameWithOwner}의 ${result.environment.environmentName} Environment에 ` +
-            `${result.secrets.secretNames.join(", ")}을 등록했습니다.`;
+            `${result.secrets.secretNames.join(", ")}을 등록했습니다. ` +
+            (result.publication.status === "published"
+              ? `${result.publication.documents.length}개 문서의 본문을 커밋 ` +
+                `${result.publication.sourceSha.slice(0, 12)} 기준으로 게시했습니다.`
+              : "초기 본문 게시는 선택하지 않았습니다.");
           const resultWarning = document.querySelector("#result-warning");
           resultWarning.classList.remove("visible");
           resultWarning.textContent = "";

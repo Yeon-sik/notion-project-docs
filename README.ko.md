@@ -23,7 +23,7 @@ Codex 스킬·Notion integration·GitHub Actions가 처음이라면 설치와 �
 - Notion을 수동 편집 원본이 아닌 승인된 읽기용 미러로 사용
 - 여러 프로젝트와 문서 이름을 JSON 설정으로 재사용
 - 토큰과 부모 페이지 URL만 받는 로컬 Setup Wizard로 Notion 미러 페이지와
-  GitHub Environment Secret을 자동 구성
+  GitHub Environment Secret을 자동 구성하고, 선택 시 최초 본문까지 게시
 
 ## 안전한 공개 흐름
 
@@ -37,6 +37,11 @@ Codex 스킬·Notion integration·GitHub Actions가 처음이라면 설치와 �
    Environment의 승인을 통과합니다.
 5. 실행 브랜치가 설정된 기준 브랜치와 일치합니다.
 6. 모든 Notion 대상 페이지의 읽기 사전 점검이 성공합니다.
+
+예외는 연결 Wizard에서 명시적으로 선택하는 최초 1회 게시뿐입니다. 이 경로도
+설정된 기준 브랜치의 Git 추적·커밋 상태, 문서 검증, 전체 Notion 페이지 사전
+점검과 source fingerprint 검증을 모두 요구합니다. 연결 이후의 모든 변경은
+다시 위 GitHub Actions 정책을 따릅니다.
 
 저장소 소유자가 `publicationMode`를 `on-main-push`로 명시하면, pull
 request에서는 계속 검증만 수행하고 기준 브랜치에 병합된 문서 변경은
@@ -62,10 +67,10 @@ node skills\maintain-project-docs\scripts\install-project-docs.mjs `
 충돌이 없고 경로가 의도와 맞으면 `--apply`를 추가합니다. 설치기는 기존
 파일이 다르면 덮어쓰지 않고 전체 사전 점검 단계에서 중단합니다.
 
-이후 `$maintain-project-docs`로 설정된 문서를 작성하고, 다음 GitHub
-Environment Secret을 구성합니다. 직접 GitHub Settings에서 입력하는 대신
-Notion integration을 연결한 부모 페이지 하나를 만든 뒤 다음 Wizard를 실행할
-수 있습니다.
+이후 `$maintain-project-docs`로 설정된 문서를 작성·검증하고 설치 파일과 함께
+기준 브랜치에 커밋합니다. 다음 GitHub Environment Secret은 직접 GitHub
+Settings에서 입력하는 대신 Notion integration을 연결한 부모 페이지 하나를
+만든 뒤 Wizard로 구성할 수 있습니다.
 
 ```powershell
 Set-Location C:\path\to\repository
@@ -74,8 +79,12 @@ node "$env:USERPROFILE\.codex\skills\maintain-project-docs\scripts\setup-project
 
 브라우저가 열리면 Notion integration token과 부모 페이지 URL만 입력합니다.
 Wizard가 문서별 전용 하위 페이지를 만들고, 기준 브랜치로 제한된 GitHub
-Environment와 아래 두 Secret을 구성합니다. 토큰과 페이지 ID 매핑은 저장소,
-브라우저 저장소, 명령행 인수에 기록하지 않습니다.
+Environment와 아래 두 Secret을 구성합니다. 기본 선택된 **최초 본문 즉시
+게시**를 유지하면, 현재 체크아웃이 기준 브랜치이고 설정과 문서가 Git 커밋과
+일치하며 검증을 통과하고 그 커밋이 GitHub 기준 브랜치의 현재 끝과 같을 때 같은
+연결 과정에서 페이지 본문까지 채웁니다. 본문 쓰기 없이 연결만 하려면 이 선택을
+해제합니다. 토큰과 페이지 ID 매핑은 저장소, 브라우저 저장소, 명령행 인수에
+기록하지 않습니다.
 
 - `NOTION_TOKEN`: Notion integration token
 - `NOTION_PAGE_IDS_JSON`: 문서 키와 전용 Notion 페이지 ID의 JSON 매핑
