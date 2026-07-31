@@ -104,6 +104,9 @@ Prompt:
 
 Expected:
 
+- Resolves the repository where the runtime was installed and passes that root
+  through the required `--target` option; it never substitutes the skill source
+  directory or an implicit current working directory.
 - Confirms the target repository, installed environment, canonical branch, and
   publication mode before external writes.
 - Opens a loopback-only browser session.

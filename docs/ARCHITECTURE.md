@@ -35,6 +35,11 @@ earlier source commit. Immediately before body publication, it confirms the
 checked-out branch, local `HEAD`, and GitHub canonical tip still match that
 snapshot.
 
+The setup wizard requires an explicit target repository root. It does not use
+the shell's current working directory or the skill source directory as an
+implicit fallback. The target must contain the repository-local configuration
+and installed workflow before any GitHub or Notion operation can begin.
+
 ## Installed runtime
 
 The target repository receives a pinned copy of the configuration loader,

@@ -93,9 +93,12 @@ integration을 연결합니다. 개별 미러 페이지를 만들거나 페이�
 말고 다음 Setup Wizard를 실행합니다.
 
 ```powershell
-Set-Location C:\path\to\your-repository
-node "$env:USERPROFILE\.codex\skills\maintain-project-docs\scripts\setup-project-docs.mjs"
+node "$env:USERPROFILE\.codex\skills\maintain-project-docs\scripts\setup-project-docs.mjs" `
+  --target "C:\path\to\your-repository"
 ```
+
+`--target`에는 위 설치 단계에서 선택한 저장소 루트를 그대로 지정합니다.
+생략하면 다른 저장소의 문서를 잘못 게시하지 않도록 Wizard가 시작 전에 중단됩니다.
 
 첫 실행에서는 열린 브라우저에 integration token과 부모 페이지 URL을
 입력합니다. 연결이 성공하면 토큰은 현재 기기의 사용자 설정에 저장되어 다른

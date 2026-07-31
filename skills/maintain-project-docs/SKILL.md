@@ -64,13 +64,15 @@ or changing the runtime bundle.
    the local setup wizard over manual page-ID and secret entry:
 
    ```text
-   cd <repository>
-   node <skill-directory>/scripts/setup-project-docs.mjs
+   node <skill-directory>/scripts/setup-project-docs.mjs --target <repository-root>
    ```
 
-   The wizard uses the current working directory as the target. `--target`
-   remains an optional override for automation. Its default checked option
-   publishes the configured document bodies immediately after connection.
+   Resolve `<repository-root>` from the repository where the project-docs
+   runtime was installed, and always pass it explicitly. Never substitute the
+   skill directory or rely on the current working directory. The wizard rejects
+   calls without `--target` before any Notion or GitHub operation. Its default
+   checked option publishes the configured document bodies immediately after
+   connection.
    After the first successful connection, it stores the Notion token and most
    recently used parent page URL in the current OS user's local configuration
    directory. Later runs across repositories reuse omitted values. Entering a

@@ -16,6 +16,7 @@ import { parseNotionPageId } from "./setup/notion-provisioner.mjs";
 import {
   loadSetupContext,
   provisionProjectDocsSetup,
+  resolveInstalledRepositoryTarget,
 } from "./setup/project-docs-setup.mjs";
 
 const SCRIPT_DIRECTORY = path.dirname(fileURLToPath(import.meta.url));
@@ -27,7 +28,7 @@ function parseArguments(argv) {
   const options = {
     configPath: "project-docs.config.json",
     openBrowser: true,
-    target: process.cwd(),
+    target: "",
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -48,6 +49,9 @@ function parseArguments(argv) {
       throw new Error(`Unknown option: ${argument}`);
     }
   }
+  if (!options.help) {
+    options.target = resolveInstalledRepositoryTarget(options.target);
+  }
   return options;
 }
 
@@ -56,7 +60,7 @@ function printHelp() {
   node setup-project-docs.mjs [options]
 
 Options:
-  --target <path>  Target repository (default: current working directory)
+  --target <path>  Target repository where project docs automation is installed (required)
   --config <path>  Configuration path inside the target repository
   --no-open        Print the local URL without opening a browser
   -h, --help       Show this help`);
@@ -180,7 +184,7 @@ function openLocalBrowser(url) {
 }
 
 export async function startSetupWizard({
-  target = process.cwd(),
+  target,
   configPath = "project-docs.config.json",
   openBrowser = true,
   setupProvisioner = provisionProjectDocsSetup,
@@ -188,7 +192,10 @@ export async function startSetupWizard({
   loadConnectionState = loadDeviceConnectionState,
   saveConnectionState = saveDeviceConnectionState,
 } = {}) {
-  const context = loadSetupContext({ target, configPath });
+  const context = loadSetupContext({
+    target: resolveInstalledRepositoryTarget(target),
+    configPath,
+  });
   let deviceConnectionState = loadConnectionState();
   const sessionToken = randomBytes(24).toString("base64url");
   const cspNonce = randomBytes(18).toString("base64");

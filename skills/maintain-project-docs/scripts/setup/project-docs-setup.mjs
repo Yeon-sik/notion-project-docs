@@ -19,6 +19,15 @@ import {
 
 const WORKFLOW_PATH = ".github/workflows/project-docs-notion.yml";
 
+export function resolveInstalledRepositoryTarget(target) {
+  if (typeof target !== "string" || !target.trim()) {
+    throw new Error(
+      "Target repository is required. Pass --target <repository> for the repository where project docs automation is installed; the setup wizard never infers it from the current directory or skill directory.",
+    );
+  }
+  return path.resolve(target.trim());
+}
+
 function installedEnvironmentName(rootDirectory) {
   const workflowPath = path.join(rootDirectory, WORKFLOW_PATH);
   if (!existsSync(workflowPath)) {
@@ -46,11 +55,12 @@ function installedEnvironmentName(rootDirectory) {
 }
 
 export function loadSetupContext({
-  target = process.cwd(),
+  target,
   configPath = "project-docs.config.json",
 } = {}) {
+  const rootDirectory = resolveInstalledRepositoryTarget(target);
   const projectConfig = loadProjectDocsConfig({
-    rootDirectory: target,
+    rootDirectory,
     configPath,
   });
 
