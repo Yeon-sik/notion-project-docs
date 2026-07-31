@@ -6,7 +6,7 @@
 | --- | --- |
 | 프로젝트 형태 | 공개 Codex 플러그인, Node.js CLI, GitHub Actions 템플릿 |
 | 현재 상태 | v0.2.0 공개 저장소 배포, universal Plugins Directory 미제출 |
-| 문서 기준 | [`e4210092ff61ad27038347f72deb2e79bbe4994c`](https://github.com/Yeon-sik/notion-project-docs/tree/e4210092ff61ad27038347f72deb2e79bbe4994c) |
+| 문서 기준 | [`9c3fefae228120d5ab157e1d1c44208773fa0beb`](https://github.com/Yeon-sik/notion-project-docs/tree/9c3fefae228120d5ab157e1d1c44208773fa0beb) |
 | 주요 기술 | Codex Skills, Node.js ESM, GitHub Actions, Notion API, JSON Schema |
 | 실행 조건 | Node.js 22.18 이상, 서드파티 런타임 의존성 없음 |
 | Repository | [Yeon-sik/notion-project-docs](https://github.com/Yeon-sik/notion-project-docs) |

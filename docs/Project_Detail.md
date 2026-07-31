@@ -7,7 +7,7 @@
 | 문서 상태 | Active |
 | 적용 범위 | v0.2.0, `main`의 기준 구현 커밋 |
 | 최종 갱신 | 2026-08-01T02:48:26+09:00 |
-| 최종 구현 기준 | [`e4210092ff61ad27038347f72deb2e79bbe4994c`](https://github.com/Yeon-sik/notion-project-docs/tree/e4210092ff61ad27038347f72deb2e79bbe4994c) |
+| 최종 구현 기준 | [`9c3fefae228120d5ab157e1d1c44208773fa0beb`](https://github.com/Yeon-sik/notion-project-docs/tree/9c3fefae228120d5ab157e1d1c44208773fa0beb) |
 | 문서 진실 원천 | Git 저장소의 `docs/Project_Detail.md` |
 | 공개 상태 | GitHub 공개 저장소, universal Plugins Directory 미제출 |
 
@@ -82,9 +82,9 @@
 
 | 기능 | 구현 상태 | 검증 수준 | 환경·기준 | 확인된 근거 | 남은 위험 |
 | --- | --- | --- | --- | --- | --- |
-| 증거 기반 문서 작성 지침 | 구현 완료 | 저장소 검증 | `e421009` | [SKILL.md](../skills/maintain-project-docs/SKILL.md), [EVIDENCE_MODEL.md](../skills/maintain-project-docs/references/EVIDENCE_MODEL.md) | 에이전트가 실제로 모든 주장을 올바르게 분류하는지는 작업별 리뷰 필요 |
-| 비파괴 설치기 | 구현 완료 | 저장소 검증 | `e421009`, 로컬 테스트 | [install-project-docs.mjs](../skills/maintain-project-docs/scripts/install-project-docs.mjs) | 사용자 정의 파일과의 의미적 병합은 자동화하지 않음 |
-| 문서 검증기 | 구현 완료 | 저장소 검증 | `e421009`, 로컬 테스트 | [validate-project-docs.mjs](../skills/maintain-project-docs/scripts/validate-project-docs.mjs) | 모든 비밀값 형식을 완전 탐지하는 DLP 도구는 아님 |
+| 증거 기반 문서 작성 지침 | 구현 완료 | 저장소 검증 | `9c3fefa` | [SKILL.md](../skills/maintain-project-docs/SKILL.md), [EVIDENCE_MODEL.md](../skills/maintain-project-docs/references/EVIDENCE_MODEL.md) | 에이전트가 실제로 모든 주장을 올바르게 분류하는지는 작업별 리뷰 필요 |
+| 비파괴 설치기 | 구현 완료 | 저장소 검증 | `9c3fefa`, 로컬 테스트 | [install-project-docs.mjs](../skills/maintain-project-docs/scripts/install-project-docs.mjs) | 사용자 정의 파일과의 의미적 병합은 자동화하지 않음 |
+| 문서 검증기 | 구현 완료 | 저장소 검증 | `9c3fefa`, 로컬 테스트 | [validate-project-docs.mjs](../skills/maintain-project-docs/scripts/validate-project-docs.mjs) | 모든 비밀값 형식을 완전 탐지하는 DLP 도구는 아님 |
 | Notion Markdown 발행기 | 구현 완료 | 저장소 테스트 + 실제 수동 발행 | `9c3fefa`, Node 테스트, [Actions 실행](https://github.com/Yeon-sik/notion-project-docs/actions/runs/30657348898) | [sync-project-docs-to-notion.mjs](../skills/maintain-project-docs/scripts/sync-project-docs-to-notion.mjs), Notion read-back | 현재 계정·페이지 조합 외 권한·네트워크 조합은 미검증 |
 | Setup Wizard | 구현 완료 | stub 기반 저장소 검증 + 기존 원격 구성 확인 | `9c3fefa`, Node 테스트, `notion-production` 구성 메타데이터 | [setup-project-docs.mjs](../skills/maintain-project-docs/scripts/setup-project-docs.mjs) | 최신 `--target` 흐름의 브라우저 최초 연결 E2E는 미실행 |
 | 정책 기반 GitHub Actions | 구현 완료 | 실제 validate·승인·publish 검증 | `9c3fefa`, [validate](https://github.com/Yeon-sik/notion-project-docs/actions/runs/30657316182), [publish](https://github.com/Yeon-sik/notion-project-docs/actions/runs/30657348898) | [workflow template](../skills/maintain-project-docs/assets/project-docs-notion.workflow.yml) | 다른 저장소의 branch/environment 정책은 별도 확인 필요 |
