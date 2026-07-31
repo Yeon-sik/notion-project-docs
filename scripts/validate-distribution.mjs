@@ -28,6 +28,7 @@ const REQUIRED_FILES = [
   "skills/maintain-project-docs/references/OPERATIONS.md",
   "skills/maintain-project-docs/scripts/install-project-docs.mjs",
   "skills/maintain-project-docs/scripts/project-docs-config.mjs",
+  "skills/maintain-project-docs/scripts/setup/device-connection-state.mjs",
   "skills/maintain-project-docs/scripts/setup/github-provisioner.mjs",
   "skills/maintain-project-docs/scripts/setup/initial-publisher.mjs",
   "skills/maintain-project-docs/scripts/setup/notion-provisioner.mjs",

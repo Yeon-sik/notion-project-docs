@@ -19,6 +19,14 @@ Clear that option when connection setup must not publish content. Do not put
 manual notes, unrelated child pages, or databases inside the generated mirror
 pages.
 
+After a successful setup, the wizard keeps the integration token and most
+recently used parent page URL in the current OS user's local configuration
+directory. Other repositories automatically reuse the stored token when the
+token field is empty. Review or change the visible parent URL for each run; an
+empty value falls back to the last successful URL. Enter a new token to rotate
+the local default after setup succeeds. The old value remains in place when
+setup fails.
+
 If the setup wizard cannot be used, create and share each mirror page manually
 and record its ID in `NOTION_PAGE_IDS_JSON`.
 
@@ -113,4 +121,8 @@ runtime behavior.
 - Wrong content: fix the canonical Markdown in Git and publish a reviewed
   revision. Do not repair only the Notion mirror.
 - Credential exposure: revoke the token, remove the value from Git history if
-  committed, create a new token, and update the protected environment secret.
+  committed, create a new token, enter it in the wizard to replace the local
+  device default, and update every affected protected environment secret.
+- Unwanted local reuse: delete `connection-state.json` from the OS user
+  configuration directory. This clears only local defaults, not GitHub
+  Environment secrets or created Notion pages.

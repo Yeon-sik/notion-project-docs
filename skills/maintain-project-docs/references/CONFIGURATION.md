@@ -47,6 +47,22 @@ the current configured Markdown during the same connection.
 Use `--target <repository>` only when the current working directory is not the
 target repository.
 
+On the first successful setup, enter both the Notion integration token and
+connected parent page URL. The wizard stores that token and the most recently
+successful parent URL in the current OS user's local configuration directory:
+
+- Windows: `%LOCALAPPDATA%\notion-project-docs\connection-state.json`
+- macOS: `~/Library/Application Support/notion-project-docs/connection-state.json`
+- Linux: `${XDG_CONFIG_HOME:-~/.config}/notion-project-docs/connection-state.json`
+
+Later runs in any repository reuse the stored token when the token field is
+empty. Entering a new token replaces it only after the complete setup succeeds.
+The recent parent URL is visible and editable on every run; clearing it reuses
+the last successful URL. The browser receives the recent URL and only a boolean
+indicating whether a token exists, never the stored token itself. Delete the
+state file to clear these local defaults. This does not remove or rotate any
+GitHub Environment secret.
+
 Initial content publication uses the same full-page preflight, replacement,
 source-fingerprint, and response checks as the GitHub publisher. It reads the
 published Markdown from the verified Git commit rather than rereading mutable
@@ -75,7 +91,10 @@ publisher source fingerprint.
 
 The wizard requires GitHub CLI authentication and repository administration
 permission. It does not write credentials or page IDs to the target
-repository, command arguments, logs, browser storage, or a hosted service.
+repository, command arguments, logs, browser storage, or a hosted service. The
+device connection state contains only the reusable token and recent parent
+URL. It uses owner-only permissions on POSIX and inherits the current user's
+local profile ACLs on Windows.
 Use `--no-open` when the local URL should only be printed.
 
 If authentication is missing or expired, **GitHub login/refresh** runs

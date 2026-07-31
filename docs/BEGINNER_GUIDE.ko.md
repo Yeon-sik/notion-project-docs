@@ -97,8 +97,13 @@ Set-Location C:\path\to\your-repository
 node "$env:USERPROFILE\.codex\skills\maintain-project-docs\scripts\setup-project-docs.mjs"
 ```
 
-열린 브라우저에서 integration token과 부모 페이지 URL을 입력하면 Wizard가
-문서별 전용 미러 페이지, GitHub Environment, 기준 브랜치 제한,
+첫 실행에서는 열린 브라우저에 integration token과 부모 페이지 URL을
+입력합니다. 연결이 성공하면 토큰은 현재 기기의 사용자 설정에 저장되어 다른
+저장소에서도 자동으로 사용됩니다. 다음 실행부터 토큰 입력란을 비워 두면 저장된
+값을 쓰고, 새 토큰을 입력하면 성공 후 교체합니다. 부모 페이지 URL은 매번 바꿀
+수 있으며 비워 두면 직전에 성공한 주소를 사용합니다.
+
+Wizard가 문서별 전용 미러 페이지, GitHub Environment, 기준 브랜치 제한,
 `NOTION_TOKEN`, `NOTION_PAGE_IDS_JSON`을 구성합니다. `manual` 모드에서는 현재
 GitHub 사용자를 required reviewer로 지정합니다. 저장소와 GitHub 요금제가 이를
 지원하지 않아 전용 HTTP 422를 반환하면 보호 규칙 필드를 모두 생략하고 기준
@@ -119,6 +124,12 @@ GitHub CLI 로그인이 만료됐다면 화면의 **GitHub 로그인/갱신**을
 ```powershell
 gh auth login --hostname github.com --web --clipboard
 ```
+
+재사용 토큰과 최근 부모 URL은 저장소나 브라우저 저장소가 아니라 OS 사용자 설정
+디렉터리의 `notion-project-docs/connection-state.json`에만 저장됩니다. 저장된
+토큰 자체는 브라우저로 전달되지 않습니다. 이 파일을 삭제하면 로컬 자동 입력만
+초기화되며, 이미 등록된 GitHub Environment Secret은 별도로 바꾸거나 삭제해야
+합니다.
 
 Wizard를 사용할 수 없는 환경에서는 아래 수동 절차를 따릅니다.
 

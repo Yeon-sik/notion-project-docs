@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -26,6 +26,11 @@ import {
   resolveInitialPublicationSource,
   verifyInitialPublicationSourceStillCurrent,
 } from "./setup/initial-publisher.mjs";
+import {
+  loadDeviceConnectionState,
+  resolveDeviceConnectionStatePath,
+  saveDeviceConnectionState,
+} from "./setup/device-connection-state.mjs";
 
 function temporaryRepository() {
   const target = mkdtempSync(path.join(tmpdir(), "notion-project-docs-setup-"));
@@ -48,6 +53,67 @@ function jsonResponse(value, init = {}) {
     ...init,
   });
 }
+
+test("Device connection state persists the Notion token and last parent page", () => {
+  const stateRoot = mkdtempSync(path.join(tmpdir(), "notion-project-docs-device-state-"));
+  const statePath = path.join(stateRoot, "nested", "connection-state.json");
+  const notionToken = "device-token-for-test";
+  const lastParentPage =
+    "https://www.notion.so/Project-00112233445566778899aabbccddeeff";
+
+  assert.deepEqual(loadDeviceConnectionState({ statePath }), {
+    notionToken: "",
+    lastParentPage: "",
+  });
+  assert.deepEqual(
+    saveDeviceConnectionState({ notionToken, lastParentPage, statePath }),
+    { notionToken, lastParentPage },
+  );
+  assert.deepEqual(loadDeviceConnectionState({ statePath }), {
+    notionToken,
+    lastParentPage,
+  });
+  const replacement = {
+    notionToken: "replacement-device-token",
+    lastParentPage: "https://www.notion.so/ffeeddccbbaa99887766554433221100",
+  };
+  saveDeviceConnectionState({ ...replacement, statePath });
+  assert.deepEqual(loadDeviceConnectionState({ statePath }), replacement);
+  assert.match(readFileSync(statePath, "utf8"), /"version": 1/);
+  if (process.platform !== "win32") {
+    assert.equal(statSync(statePath).mode & 0o077, 0);
+  }
+});
+
+test("Device connection state uses the operating system user configuration directory", () => {
+  assert.equal(
+    resolveDeviceConnectionStatePath({
+      environment: { LOCALAPPDATA: "C:\\LocalAppData" },
+      homeDirectory: "C:\\Users\\example",
+      platform: "win32",
+    }),
+    path.join("C:\\LocalAppData", "notion-project-docs", "connection-state.json"),
+  );
+  assert.equal(
+    resolveDeviceConnectionStatePath({
+      environment: { XDG_CONFIG_HOME: "/config" },
+      homeDirectory: "/home/example",
+      platform: "linux",
+    }),
+    path.join("/config", "notion-project-docs", "connection-state.json"),
+  );
+});
+
+test("Device connection state rejects malformed files", () => {
+  const stateRoot = mkdtempSync(path.join(tmpdir(), "notion-project-docs-device-state-"));
+  const statePath = path.join(stateRoot, "connection-state.json");
+  writeFileSync(statePath, "not-json", "utf8");
+
+  assert.throws(
+    () => loadDeviceConnectionState({ statePath }),
+    /not valid JSON/,
+  );
+});
 
 test("Notion page IDs are extracted from URLs and validated", () => {
   assert.equal(
@@ -884,9 +950,13 @@ test("Initial publication reuses the guarded publisher with Git source metadata"
   assert.equal(result.documents.length, 1);
 });
 
-test("Loopback wizard enforces origin checks and does not persist the submitted token", async () => {
+test("Loopback wizard enforces origin checks and saves successful connection defaults", async () => {
   const target = temporaryRepository();
   const received = [];
+  const savedConnections = [];
+  const storedNotionToken = "stored-device-secret";
+  const storedParentPage =
+    "https://www.notion.so/Stored-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
   const setupProvisioner = async (input) => {
     received.push({
       notionToken: input.notionToken,
@@ -911,6 +981,14 @@ test("Loopback wizard enforces origin checks and does not persist the submitted 
     openBrowser: false,
     setupProvisioner,
     githubLogin,
+    loadConnectionState: () => ({
+      notionToken: storedNotionToken,
+      lastParentPage: storedParentPage,
+    }),
+    saveConnectionState: (connection) => {
+      savedConnections.push(connection);
+      return connection;
+    },
   });
   const origin = new URL(wizard.url).origin;
 
@@ -920,7 +998,8 @@ test("Loopback wizard enforces origin checks and does not persist the submitted 
     assert.equal(pageResponse.status, 200);
     assert.match(pageResponse.headers.get("content-security-policy"), /default-src 'none'/);
     assert.equal(pageResponse.headers.get("cache-control"), "no-store, max-age=0");
-    assert.ok(!html.includes("submitted-secret"));
+    assert.ok(!html.includes(storedNotionToken));
+    assert.ok(html.includes(storedParentPage));
     assert.match(html, /publishInitialContent/);
 
     const rejected = await fetch(`${wizard.url}setup`, {
@@ -977,6 +1056,74 @@ test("Loopback wizard enforces origin checks and does not persist the submitted 
         publishInitialContent: true,
       },
     ]);
+    assert.deepEqual(savedConnections, [
+      {
+        notionToken: "submitted-secret",
+        lastParentPage: "https://www.notion.so/00112233445566778899aabbccddeeff",
+      },
+    ]);
+  } finally {
+    await new Promise((resolve) => wizard.server.close(resolve));
+  }
+});
+
+test("Loopback wizard reuses the stored token and last parent page when omitted", async () => {
+  const target = temporaryRepository();
+  const storedConnection = {
+    notionToken: "stored-device-secret",
+    lastParentPage: "https://www.notion.so/00112233445566778899aabbccddeeff",
+  };
+  let received;
+  const setupProvisioner = async (input) => {
+    received = {
+      notionToken: input.notionToken,
+      parentPage: input.parentPage,
+    };
+    return {
+      environment: {
+        environmentName: input.context.environmentName,
+        reviewer: "owner",
+        reviewerProtection: "required",
+      },
+      github: { nameWithOwner: "owner/repository", url: "", visibility: "PRIVATE" },
+      notion: { botName: "bot", parentUrl: input.parentPage, pages: [] },
+      publication: { status: "skipped", sourceSha: "", documents: [] },
+      secrets: { secretNames: ["NOTION_TOKEN", "NOTION_PAGE_IDS_JSON"] },
+    };
+  };
+  const wizard = await startSetupWizard({
+    target,
+    openBrowser: false,
+    setupProvisioner,
+    loadConnectionState: () => storedConnection,
+    saveConnectionState: () => {
+      throw new Error("disk unavailable");
+    },
+  });
+  const origin = new URL(wizard.url).origin;
+
+  try {
+    const response = await fetch(`${wizard.url}setup`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Origin: origin,
+      },
+      body: JSON.stringify({
+        notionToken: "",
+        parentPage: "",
+        publishInitialContent: false,
+        acknowledgePolicyReplacement: true,
+      }),
+    });
+    assert.equal(response.status, 200);
+    assert.deepEqual(received, {
+      notionToken: storedConnection.notionToken,
+      parentPage: storedConnection.lastParentPage,
+    });
+    const result = await response.json();
+    assert.equal(result.localDefaults.saved, false);
+    assert.match(result.localDefaults.warning, /설정은 완료됐지만/);
   } finally {
     await new Promise((resolve) => wizard.server.close(resolve));
   }
@@ -985,6 +1132,7 @@ test("Loopback wizard enforces origin checks and does not persist the submitted 
 test("Loopback wizard clears cached page IDs when the parent page changes", async () => {
   const target = temporaryRepository();
   const observedMapSizes = [];
+  const savedConnections = [];
   let attempt = 0;
   const setupProvisioner = async (input) => {
     observedMapSizes.push(input.pageIdsByKey.size);
@@ -1009,6 +1157,11 @@ test("Loopback wizard clears cached page IDs when the parent page changes", asyn
     target,
     openBrowser: false,
     setupProvisioner,
+    loadConnectionState: () => ({ notionToken: "", lastParentPage: "" }),
+    saveConnectionState: (connection) => {
+      savedConnections.push(connection);
+      return connection;
+    },
   });
   const origin = new URL(wizard.url).origin;
   const submit = (parentPage) =>
@@ -1031,11 +1184,18 @@ test("Loopback wizard clears cached page IDs when the parent page changes", asyn
       "https://www.notion.so/00112233445566778899aabbccddeeff",
     );
     assert.equal(first.status, 500);
+    assert.deepEqual(savedConnections, []);
     const second = await submit(
       "https://www.notion.so/ffeeddccbbaa99887766554433221100",
     );
     assert.equal(second.status, 200);
     assert.deepEqual(observedMapSizes, [0, 0]);
+    assert.deepEqual(savedConnections, [
+      {
+        notionToken: "submitted-secret",
+        lastParentPage: "https://www.notion.so/ffeeddccbbaa99887766554433221100",
+      },
+    ]);
   } finally {
     await new Promise((resolve) => wizard.server.close(resolve));
   }
