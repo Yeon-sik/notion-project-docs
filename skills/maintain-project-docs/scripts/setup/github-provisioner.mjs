@@ -197,26 +197,27 @@ export async function configureGitHubEnvironment({
     throw new Error("Unsupported publication mode.");
   }
 
-  const reviewers =
-    publicationMode === "manual"
-      ? [
-          {
-            type: "User",
-            id: currentUser.id,
-          },
-        ]
-      : [];
   const endpoint = environmentEndpoint(repository, environmentName);
   const deploymentBranchPolicy = {
     protected_branches: false,
     custom_branch_policies: true,
   };
-  const body = {
-    wait_timer: 0,
-    prevent_self_review: false,
-    reviewers,
-    deployment_branch_policy: deploymentBranchPolicy,
-  };
+  const body =
+    publicationMode === "manual"
+      ? {
+          wait_timer: 0,
+          prevent_self_review: false,
+          reviewers: [
+            {
+              type: "User",
+              id: currentUser.id,
+            },
+          ],
+          deployment_branch_policy: deploymentBranchPolicy,
+        }
+      : {
+          deployment_branch_policy: deploymentBranchPolicy,
+        };
   let reviewerProtection =
     publicationMode === "manual" ? "required" : "not-requested";
 
