@@ -21,9 +21,13 @@
 | Notion API | Read and replace dedicated mirror page content |
 
 The plugin is intentionally skills-only. It does not host a service or proxy
-credentials. The optional setup UI binds only to `127.0.0.1`, keeps setup
-state in memory, and closes after success or timeout. GitHub Actions talks
-directly to Notion during normal publication. When initial publication is
+credentials. The optional setup UI binds only to `127.0.0.1` and closes after
+success or timeout. Same-session page mappings stay in memory. After a
+successful setup, only the reusable Notion token and most recently used parent
+page URL are stored in the current OS user's local configuration directory so
+other repositories can reuse them. The browser receives only the recent URL
+and a boolean indicating whether a token exists. GitHub Actions talks directly
+to Notion during normal publication. When initial publication is
 selected, the local wizard uses the same publisher only after confirming a
 clean, tracked, validated canonical-branch source. It renders from the verified
 Git object snapshot, so a later working-tree edit cannot be mislabeled with the
@@ -62,6 +66,12 @@ service failures.
 - No plugin-hosted backend or telemetry.
 - Setup credentials are not placed in URLs, command arguments, repository
   files, logs, or browser storage.
+- The device connection state stores only the reusable token and recent parent
+  page URL under the current OS user's local configuration directory. It uses
+  owner-only permissions on POSIX and inherited user-profile ACLs on Windows.
+- Stored defaults are replaced only after a complete successful setup. A new
+  token or page URL can be supplied in any run; omitted values reuse the stored
+  defaults.
 - No committed tokens or page IDs.
 - One-time local initial publication requires an explicit selected option, a
   clean canonical checkout, tracked validated documents, and full destination

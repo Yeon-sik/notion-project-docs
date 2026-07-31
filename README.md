@@ -66,8 +66,9 @@ publish matching canonical-branch merges automatically.
 - a versioned JSON configuration contract for one to twenty documents;
 - a non-overwriting repository installer with a dry-run default;
 - a local, one-time setup wizard that creates dedicated Notion mirror pages
-  and configures protected GitHub environment secrets without persisting
-  credentials, with an explicit initial-content publication option;
+  and configures protected GitHub environment secrets, with a device-wide
+  reusable token, recent-parent-page default, and explicit initial-content
+  publication option;
 - a dependency-free validator for structure, placeholders, links, local paths,
   and common credential formats;
 - a deterministic Notion Markdown publisher with full-page preflight,
@@ -110,22 +111,28 @@ cd /path/to/repository
 node /path/to/maintain-project-docs/scripts/setup-project-docs.mjs
 ```
 
-The wizard opens a loopback-only browser page. Paste the integration token and
-the connected parent page URL. It creates or safely reuses one dedicated child
-page per configured document, restricts the protected environment to the
-canonical branch, configures the current GitHub user as reviewer in `manual`
-mode when the repository plan supports required reviewers, and stores
-`NOTION_TOKEN` plus `NOTION_PAGE_IDS_JSON` through GitHub CLI stdin. Its checked
+The wizard opens a loopback-only browser page. Enter the integration token on
+the first successful connection. Later runs in any repository automatically
+use that device-wide token unless a replacement is entered. The parent page
+URL can be changed on every run; an empty field reuses the most recently
+successful URL. The wizard creates or safely reuses one dedicated child page
+per configured document, restricts the protected environment to the canonical
+branch, configures the current GitHub user as reviewer in `manual` mode when
+the repository plan supports required reviewers, and stores `NOTION_TOKEN`
+plus `NOTION_PAGE_IDS_JSON` through GitHub CLI stdin. Its checked
 initial-publication option immediately fills the pages only when the source is
 clean, tracked, validated, checked out on the canonical branch, and equal to
-the current GitHub branch tip. Clear the option for connection-only setup. When GitHub rejects required reviewers with
-its plan-specific HTTP 422 response, the wizard retries with only the
-canonical-branch policy, omitting all unsupported protection-rule fields, and
-shows a reduced-protection warning. If GitHub CLI authentication has expired,
+the current GitHub branch tip. Clear the option for connection-only setup.
+When GitHub rejects required reviewers with its plan-specific HTTP 422
+response, the wizard retries with only the canonical-branch policy, omitting
+all unsupported protection-rule fields, and shows a reduced-protection
+warning. If GitHub CLI authentication has expired,
 **GitHub login/refresh** starts the browser device flow, copies the one-time
 code to the clipboard, and times out after five minutes instead of waiting
 indefinitely. No token or page map is written to the repository or browser
-storage.
+storage. The reusable token and recent parent URL are written only after a
+successful setup to the current OS user's local configuration directory. The
+stored token is never embedded in the browser page.
 
 After setup:
 

@@ -17,10 +17,12 @@ personal data in a report.
 
 ## Security boundaries
 
-- The plugin itself has no hosted service and stores no credentials.
+- The plugin has no hosted service. After successful setup, the wizard stores
+  the reusable Notion token and recent parent page URL in the current OS
+  user's local configuration directory, never in a target repository.
 - The optional setup server binds to `127.0.0.1`, uses an unguessable session
-  path and strict origin/CSP controls, and erases in-memory page mappings when
-  the session closes.
+  path and strict origin/CSP controls, never sends the stored token to the
+  browser, and erases in-memory page mappings when the session closes.
 - Setup secrets are passed to GitHub CLI through standard input, never command
   arguments or temporary files.
 - Target repositories keep `NOTION_TOKEN` and `NOTION_PAGE_IDS_JSON` in a

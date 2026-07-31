@@ -7,6 +7,10 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
+import {
+  loadDeviceConnectionState,
+  saveDeviceConnectionState,
+} from "./setup/device-connection-state.mjs";
 import { loginToGitHub } from "./setup/github-provisioner.mjs";
 import { parseNotionPageId } from "./setup/notion-provisioner.mjs";
 import {
@@ -67,7 +71,7 @@ function jsonForInlineScript(value) {
     .replaceAll("\u2029", "\\u2029");
 }
 
-function renderHtml(context, cspNonce) {
+function renderHtml(context, cspNonce, deviceConnectionState) {
   const source = readFileSync(HTML_PATH, "utf8");
   const nonceOccurrences = source.split("__CSP_NONCE__").length - 1;
   if (nonceOccurrences !== 2) {
@@ -78,6 +82,10 @@ function renderHtml(context, cspNonce) {
   }
   const bootstrap = jsonForInlineScript({
     canonicalBranch: context.canonicalBranch,
+    connectionDefaults: {
+      hasStoredNotionToken: Boolean(deviceConnectionState.notionToken),
+      lastParentPage: deviceConnectionState.lastParentPage,
+    },
     documents: context.documents,
     environmentName: context.environmentName,
     publicationMode: context.publicationMode,
@@ -177,12 +185,15 @@ export async function startSetupWizard({
   openBrowser = true,
   setupProvisioner = provisionProjectDocsSetup,
   githubLogin = loginToGitHub,
+  loadConnectionState = loadDeviceConnectionState,
+  saveConnectionState = saveDeviceConnectionState,
 } = {}) {
   const context = loadSetupContext({ target, configPath });
+  let deviceConnectionState = loadConnectionState();
   const sessionToken = randomBytes(24).toString("base64url");
   const cspNonce = randomBytes(18).toString("base64");
   const sessionPath = `/session/${sessionToken}/`;
-  const html = renderHtml(context, cspNonce);
+  const html = renderHtml(context, cspNonce, deviceConnectionState);
   const pageIdsByKey = new Map();
   let pageBinding = "";
   let busy = false;
@@ -235,20 +246,24 @@ export async function startSetupWizard({
         return;
       }
 
-      const notionToken =
+      const submittedNotionToken =
         typeof payload.notionToken === "string" ? payload.notionToken.trim() : "";
-      const parentPage =
+      const submittedParentPage =
         typeof payload.parentPage === "string" ? payload.parentPage.trim() : "";
+      const notionToken = submittedNotionToken || deviceConnectionState.notionToken;
+      const parentPage = submittedParentPage || deviceConnectionState.lastParentPage;
       const publishInitialContent = payload.publishInitialContent === true;
       if (!notionToken || notionToken.length > 512) {
-        throw Object.assign(new Error("Notion integration token is required."), {
-          statusCode: 400,
-        });
+        throw Object.assign(
+          new Error("Notion integration token is required for the first connection."),
+          { statusCode: 400 },
+        );
       }
       if (!parentPage || parentPage.length > 2_048) {
-        throw Object.assign(new Error("Notion parent page URL is required."), {
-          statusCode: 400,
-        });
+        throw Object.assign(
+          new Error("Notion parent page URL is required when no previous page is stored."),
+          { statusCode: 400 },
+        );
       }
       if (payload.acknowledgePolicyReplacement !== true) {
         throw Object.assign(
@@ -274,7 +289,23 @@ export async function startSetupWizard({
         publishInitialContent,
         pageIdsByKey,
       });
-      sendJson(response, 200, result);
+      let localDefaults = {
+        saved: true,
+        warning: "",
+      };
+      try {
+        deviceConnectionState = saveConnectionState({
+          notionToken,
+          lastParentPage: parentPage,
+        });
+      } catch {
+        localDefaults = {
+          saved: false,
+          warning:
+            "설정은 완료됐지만 기기 전용 Notion 토큰과 최근 페이지 URL을 저장하지 못했습니다. 다음 실행에서 다시 입력하세요.",
+        };
+      }
+      sendJson(response, 200, { ...result, localDefaults });
       shutdownTimer = setTimeout(() => server.close(), 3_000);
       shutdownTimer.unref();
     } catch (error) {

@@ -107,7 +107,11 @@ Expected:
 - Confirms the target repository, installed environment, canonical branch, and
   publication mode before external writes.
 - Opens a loopback-only browser session.
-- Requires only the Notion integration token and connected parent page URL.
+- Requires the Notion integration token only on the first successful setup,
+  reuses it across repositories without embedding it in browser HTML, and
+  permits an explicit replacement token on any later run.
+- Prefills the most recently successful parent page URL, permits changing it
+  per run, and falls back to that URL when the submitted value is empty.
 - Creates one dedicated child page per configured document.
 - Shows the initial-content publication option as selected by default and
   explains that it is a one-time connection operation.
@@ -121,7 +125,9 @@ Expected:
 - Preserves the previous connection-only behavior when the initial-content
   option is cleared.
 - Sends both GitHub secrets through stdin and never writes credentials or page
-  IDs to the repository, logs, command arguments, or browser storage.
+  IDs to the repository, logs, command arguments, or browser storage. Stores
+  only the reusable token and recent parent URL in the OS user configuration
+  directory after complete success.
 - Retries without a reviewer only for GitHub's specific required-reviewer plan
   HTTP 422, omits every protection-rule field from the fallback request, and
   displays a reduced-protection warning.

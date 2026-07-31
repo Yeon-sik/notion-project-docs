@@ -22,8 +22,9 @@ Codex 스킬·Notion integration·GitHub Actions가 처음이라면 설치와 �
 - Git Markdown을 진실 원천으로 유지
 - Notion을 수동 편집 원본이 아닌 승인된 읽기용 미러로 사용
 - 여러 프로젝트와 문서 이름을 JSON 설정으로 재사용
-- 토큰과 부모 페이지 URL만 받는 로컬 Setup Wizard로 Notion 미러 페이지와
-  GitHub Environment Secret을 자동 구성하고, 선택 시 최초 본문까지 게시
+- 최초 1회 저장한 기기 전용 토큰과 최근 부모 페이지 URL을 재사용하는 로컬
+  Setup Wizard로 Notion 미러 페이지와 GitHub Environment Secret을 자동
+  구성하고, 선택 시 최초 본문까지 게시
 
 ## 안전한 공개 흐름
 
@@ -77,14 +78,22 @@ Set-Location C:\path\to\repository
 node "$env:USERPROFILE\.codex\skills\maintain-project-docs\scripts\setup-project-docs.mjs"
 ```
 
-브라우저가 열리면 Notion integration token과 부모 페이지 URL만 입력합니다.
+첫 연결에서는 Notion integration token과 부모 페이지 URL을 입력합니다. 연결이
+성공하면 토큰은 현재 기기의 사용자 설정에 저장되어 다른 저장소의 Wizard에서도
+자동으로 사용됩니다. 이후 토큰 입력란을 비워 두면 저장된 토큰을 사용하고, 새
+토큰을 입력하면 성공 후 기존 값을 교체합니다. 부모 페이지 URL은 실행할 때마다
+바꿀 수 있으며 비워 두면 직전에 성공한 페이지 주소를 사용합니다.
+
 Wizard가 문서별 전용 하위 페이지를 만들고, 기준 브랜치로 제한된 GitHub
 Environment와 아래 두 Secret을 구성합니다. 기본 선택된 **최초 본문 즉시
 게시**를 유지하면, 현재 체크아웃이 기준 브랜치이고 설정과 문서가 Git 커밋과
 일치하며 검증을 통과하고 그 커밋이 GitHub 기준 브랜치의 현재 끝과 같을 때 같은
 연결 과정에서 페이지 본문까지 채웁니다. 본문 쓰기 없이 연결만 하려면 이 선택을
 해제합니다. 토큰과 페이지 ID 매핑은 저장소, 브라우저 저장소, 명령행 인수에
-기록하지 않습니다.
+기록하지 않습니다. 재사용 토큰과 최근 부모 페이지 URL만 OS 사용자 설정
+디렉터리의 `notion-project-docs/connection-state.json`에 기록되며, 저장된 토큰
+원문은 브라우저 HTML로 전달되지 않습니다. 이 파일을 삭제하면 로컬 기본값만
+초기화되고 GitHub Environment Secret은 별도로 유지됩니다.
 
 - `NOTION_TOKEN`: Notion integration token
 - `NOTION_PAGE_IDS_JSON`: 문서 키와 전용 Notion 페이지 ID의 JSON 매핑

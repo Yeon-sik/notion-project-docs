@@ -13,6 +13,9 @@ owner's explicit approval.
 - [ ] English and Korean installation paths are tested.
 - [ ] No token, page ID, private content, or local user path is present.
 - [ ] Setup UI binds only to loopback and does not use browser storage.
+- [ ] The stored token never enters browser HTML; device connection state is
+      written only under the OS user configuration directory with the expected
+      local permission boundary.
 - [ ] GitHub secrets are passed through stdin, not command arguments or files.
 - [ ] Required-reviewer plan-limit fallback is narrow, tested, and visibly
       reports reduced protection; its retry body omits all protection-rule

@@ -250,9 +250,9 @@
       <header>
         <h1>Notion Project Docs 설정</h1>
         <p>
-          토큰과 부모 페이지 URL만 입력하면 전용 미러 페이지와 GitHub Environment Secret을
-          구성하고, 선택하면 검증된 Git 문서 본문도 즉시 게시합니다. 입력값은 이 컴퓨터의
-          일회성 서버에서만 처리됩니다.
+          최초 연결에서 토큰을 한 번 입력하면 이 기기의 사용자 설정에 보관되어 다른 저장소에서도
+          자동으로 사용됩니다. 부모 페이지 URL은 실행할 때 바꿀 수 있고, 비워 두면 마지막으로
+          성공한 주소를 사용합니다. 선택하면 검증된 Git 문서 본문도 즉시 게시합니다.
         </p>
       </header>
 
@@ -289,7 +289,10 @@
               required
               spellcheck="false"
             />
-            <span>토큰은 URL, 파일, 브라우저 저장소 또는 명령행 인수에 저장되지 않습니다.</span>
+            <span id="token-help">
+              최초 성공 후 기기 전용 사용자 설정 파일에 저장됩니다. 새 토큰을 입력하면 성공 후
+              기존 값을 교체합니다.
+            </span>
           </label>
 
           <label>
@@ -304,7 +307,10 @@
               required
               spellcheck="false"
             />
-            <span>Wizard가 이 페이지 아래에 문서별 전용 미러 페이지를 생성합니다.</span>
+            <span id="parent-page-help">
+              Wizard가 이 페이지 아래에 문서별 전용 미러 페이지를 생성합니다. 비워 두면 마지막으로
+              성공한 부모 페이지 주소를 사용합니다.
+            </span>
           </label>
 
           <label class="acknowledgement">
@@ -354,9 +360,22 @@
       const loginButton = document.querySelector("#login-button");
       const status = document.querySelector("#status");
       const tokenInput = document.querySelector("#notion-token");
+      const tokenHelp = document.querySelector("#token-help");
+      const parentPageInput = document.querySelector("#parent-page");
       const publishInitialContentInput = document.querySelector(
         "#publish-initial-content",
       );
+
+      if (bootstrap.connectionDefaults.hasStoredNotionToken) {
+        tokenInput.required = false;
+        tokenInput.placeholder = "저장된 토큰 사용 (변경하려면 새 토큰 입력)";
+        tokenHelp.textContent =
+          "이 기기에 저장된 토큰을 자동으로 사용합니다. 새 토큰을 입력하면 성공 후 기존 값을 교체합니다.";
+      }
+      if (bootstrap.connectionDefaults.lastParentPage) {
+        parentPageInput.value = bootstrap.connectionDefaults.lastParentPage;
+        parentPageInput.required = false;
+      }
 
       document.querySelector("#target").textContent = bootstrap.target;
       document.querySelector("#branch").textContent = bootstrap.canonicalBranch;
@@ -420,7 +439,7 @@
 
         const payload = {
           notionToken: tokenInput.value,
-          parentPage: document.querySelector("#parent-page").value,
+          parentPage: parentPageInput.value,
           publishInitialContent: publishInitialContentInput.checked,
           acknowledgePolicyReplacement: document.querySelector("#acknowledge").checked,
         };
@@ -438,11 +457,19 @@
           const resultWarning = document.querySelector("#result-warning");
           resultWarning.classList.remove("visible");
           resultWarning.textContent = "";
+          const warnings = [];
           if (result.environment.reviewerProtection === "unsupported-by-plan") {
-            resultWarning.textContent =
+            warnings.push(
               "현재 GitHub 요금제에서는 이 저장소의 required reviewer를 지원하지 않아 " +
               "reviewer 없이 구성했습니다. 수동 발행은 정확한 PUBLISH 확인을 계속 요구하지만 " +
-              "별도의 Environment 승인 단계는 없습니다.";
+              "별도의 Environment 승인 단계는 없습니다.",
+            );
+          }
+          if (result.localDefaults && !result.localDefaults.saved) {
+            warnings.push(result.localDefaults.warning);
+          }
+          if (warnings.length > 0) {
+            resultWarning.textContent = warnings.join("\n\n");
             resultWarning.classList.add("visible");
           }
           const pageList = document.querySelector("#result-pages");

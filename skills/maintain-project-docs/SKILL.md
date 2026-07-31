@@ -71,6 +71,11 @@ or changing the runtime bundle.
    The wizard uses the current working directory as the target. `--target`
    remains an optional override for automation. Its default checked option
    publishes the configured document bodies immediately after connection.
+   After the first successful connection, it stores the Notion token and most
+   recently used parent page URL in the current OS user's local configuration
+   directory. Later runs across repositories reuse omitted values. Entering a
+   new token or page URL overrides the stored value after that run succeeds;
+   the stored token is never sent to the browser.
    This one-time initial publication is allowed only when the target is the
    repository root, the configured documents pass validation, all source
    files are Git-tracked and clean, and the checked-out branch is the
