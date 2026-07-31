@@ -507,6 +507,78 @@ test("GitHub login uses the browser device flow without waiting for terminal inp
   assert.equal(repository.nameWithOwner, "owner/repository");
 });
 
+test("GitHub on-main-push provisioning sends only the branch policy once", async () => {
+  const calls = [];
+  const run = async (_command, args, options = {}) => {
+    calls.push({ args, input: options.input || "" });
+    const joined = args.join(" ");
+    if (joined.includes("--method PUT") && joined.includes("/environments/")) {
+      return {
+        stdout: JSON.stringify({ name: "notion-docs-production" }),
+        stderr: "",
+      };
+    }
+    if (
+      joined.startsWith("api repos/owner/repository/environments/") &&
+      joined.endsWith("/deployment-branch-policies")
+    ) {
+      return {
+        stdout: JSON.stringify({
+          branch_policies: [{ id: 10, name: "legacy/*" }],
+        }),
+        stderr: "",
+      };
+    }
+    if (joined.includes("--method POST") && joined.includes("deployment-branch-policies")) {
+      return { stdout: JSON.stringify({ id: 12, name: "main" }), stderr: "" };
+    }
+    return { stdout: "", stderr: "" };
+  };
+
+  const environment = await configureGitHubEnvironment({
+    cwd: "C:\\repo",
+    repository: "owner/repository",
+    environmentName: "notion-docs-production",
+    canonicalBranch: "main",
+    publicationMode: "on-main-push",
+    currentUser: { id: 42, login: "owner" },
+    run,
+  });
+
+  const environmentCalls = calls.filter(
+    (call) =>
+      call.args.includes("PUT") &&
+      call.args.some((arg) => arg.includes("/environments/")),
+  );
+  assert.equal(environmentCalls.length, 1);
+  const environmentBody = JSON.parse(environmentCalls[0].input);
+  assert.deepEqual(environmentBody, {
+    deployment_branch_policy: {
+      protected_branches: false,
+      custom_branch_policies: true,
+    },
+  });
+  assert.equal("reviewers" in environmentBody, false);
+  assert.equal("wait_timer" in environmentBody, false);
+  assert.equal("prevent_self_review" in environmentBody, false);
+  assert.equal(environment.reviewer, "");
+  assert.equal(environment.reviewerProtection, "not-requested");
+  assert.ok(
+    calls.some(
+      (call) =>
+        call.args.includes("DELETE") &&
+        call.args.some((arg) => arg.endsWith("/deployment-branch-policies/10")),
+    ),
+  );
+  assert.ok(
+    calls.some(
+      (call) =>
+        call.args.includes("POST") &&
+        call.input.includes('"name":"main"'),
+    ),
+  );
+});
+
 test("GitHub provisioning falls back when the plan rejects required reviewers", async () => {
   const environmentBodies = [];
   const run = async (_command, args, options = {}) => {
