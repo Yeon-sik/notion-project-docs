@@ -33,6 +33,8 @@ owner's explicit approval.
 - [ ] Run direct and indirect activation prompts.
 - [ ] Run one negative prompt that should not activate the skill.
 - [ ] Install into a disposable target repository.
+- [ ] Confirm the setup wizard rejects a missing `--target` and loads documents
+      only from the explicitly selected installed repository.
 - [ ] Validate filled example documents.
 - [ ] Run a Notion API preflight with non-production pages.
 - [ ] Perform one explicitly approved test publication and rerun it to verify

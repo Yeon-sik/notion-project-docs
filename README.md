@@ -111,9 +111,13 @@ page, connect the internal Notion integration to that page, and run the local
 setup wizard:
 
 ```bash
-cd /path/to/repository
-node /path/to/maintain-project-docs/scripts/setup-project-docs.mjs
+node /path/to/maintain-project-docs/scripts/setup-project-docs.mjs \
+  --target /path/to/repository
 ```
+
+The target is mandatory. It must be the repository where the installer wrote
+`project-docs.config.json`; the wizard never falls back to its own skill
+directory or the shell's current working directory.
 
 The wizard opens a loopback-only browser page. Enter the integration token on
 the first successful connection. Later runs in any repository automatically

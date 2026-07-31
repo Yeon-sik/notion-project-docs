@@ -77,9 +77,13 @@ Settings에서 입력하는 대신 Notion integration을 연결한 부모 페이
 만든 뒤 Wizard로 구성할 수 있습니다.
 
 ```powershell
-Set-Location C:\path\to\repository
-node "$env:USERPROFILE\.codex\skills\maintain-project-docs\scripts\setup-project-docs.mjs"
+node "$env:USERPROFILE\.codex\skills\maintain-project-docs\scripts\setup-project-docs.mjs" `
+  --target "C:\path\to\repository"
 ```
+
+`--target`은 필수이며 Installer가 `project-docs.config.json`을 설치한 저장소를
+지정해야 합니다. Wizard는 스킬 자체 디렉터리나 현재 작업 디렉터리를 대상
+저장소로 추측하지 않습니다.
 
 첫 연결에서는 Notion integration token과 부모 페이지 URL을 입력합니다. 연결이
 성공하면 토큰은 현재 기기의 사용자 설정에 저장되어 다른 저장소의 Wizard에서도

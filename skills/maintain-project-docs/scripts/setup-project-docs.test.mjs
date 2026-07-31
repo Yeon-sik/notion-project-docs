@@ -54,6 +54,13 @@ function jsonResponse(value, init = {}) {
   });
 }
 
+test("Setup wizard refuses to infer the target repository from the current directory", async () => {
+  await assert.rejects(
+    () => startSetupWizard({ openBrowser: false }),
+    /Target repository is required/,
+  );
+});
+
 test("Device connection state persists the Notion token and last parent page", () => {
   const stateRoot = mkdtempSync(path.join(tmpdir(), "notion-project-docs-device-state-"));
   const statePath = path.join(stateRoot, "nested", "connection-state.json");

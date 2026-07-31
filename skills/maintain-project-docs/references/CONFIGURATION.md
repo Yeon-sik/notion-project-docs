@@ -35,7 +35,7 @@ connect an internal Notion integration to it. From the target repository root,
 invoke the installed skill script:
 
 ```text
-node <skill-directory>/scripts/setup-project-docs.mjs
+node <skill-directory>/scripts/setup-project-docs.mjs --target <repository>
 ```
 
 The command opens an ephemeral browser UI on a random `127.0.0.1` port. It
@@ -44,8 +44,10 @@ child page per configured document, configures the protected GitHub
 environment, and stores `NOTION_TOKEN` plus `NOTION_PAGE_IDS_JSON`. By default,
 the checked **initial content publication** option also fills those pages with
 the current configured Markdown during the same connection.
-Use `--target <repository>` only when the current working directory is not the
-target repository.
+`--target <repository>` is required and must point to the repository where the
+installer wrote `project-docs.config.json` and `.github/project-docs/`. The
+wizard never infers a target from the current working directory or the skill's
+own directory, so an agent cannot silently publish the wrong repository.
 
 On the first successful setup, enter both the Notion integration token and
 connected parent page URL. The wizard stores that token and the most recently
