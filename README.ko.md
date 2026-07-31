@@ -15,6 +15,9 @@ Codex 스킬·Notion integration·GitHub Actions가 처음이라면 설치와 �
 읽으세요. 스킬 설치 요청문, Notion·GitHub 설정, 첫 발행, 평소 작업 요청문과
 문제 해결 방법을 순서대로 안내합니다.
 
+이 저장소 자체의 문제·설계·검증 경계는 [프로젝트 소개](./docs/Project_Intro.md)와
+[기술 사례 연구](./docs/Project_Detail.md)에 근거 중심으로 정리했습니다.
+
 ## 핵심 목적
 
 - 포트폴리오용 프로젝트 소개와 기술 사례 문서를 근거 기반으로 작성

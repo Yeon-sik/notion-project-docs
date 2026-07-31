@@ -17,6 +17,10 @@ before installing or configuring this plugin. It covers installation, Notion
 and GitHub connection, safe first publication, everyday prompts, and common
 problems.
 
+For an evidence-grounded view of this repository itself, read the Korean
+[project overview](./docs/Project_Intro.md) and
+[technical case study](./docs/Project_Detail.md).
+
 ## Why this exists
 
 Project documentation often fails in one of two ways: it becomes a polished
