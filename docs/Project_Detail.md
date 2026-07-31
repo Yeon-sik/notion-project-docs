@@ -27,10 +27,10 @@
 
 - 특정 사용자의 비공개 프로젝트 문서와 Notion 페이지 내용
 - Notion 또는 GitHub의 실제 토큰·페이지 ID·Environment 값
-- 이번 세션에서 실행하지 않은 실제 Notion 쓰기와 GitHub 설정 변경
+- 실제 토큰·page map 값과 미러 페이지 밖의 비공개 Notion 콘텐츠
 - universal Plugins Directory 심사·배포 결과
 
-이 문서의 구현 주장은 기준 커밋의 추적 파일과 로컬 검사 결과에 한정한다. 실제 외부 서비스 동작은 별도 E2E 증거가 없으므로 저장소 검증으로만 표시한다.
+이 문서의 구현 주장은 기준 커밋의 추적 파일, 로컬 검사, 연결된 GitHub Actions 실행과 Notion read-back 결과에 한정한다. 현재 저장소의 수동 발행 경로는 실환경 확인했지만 Setup Wizard 최초 연결, 동일 revision 재실행, 부분 실패 복구와 다른 권한 조합은 별도 검증 항목으로 남긴다.
 
 ## 2. 문제 맥락과 제약
 
@@ -85,9 +85,9 @@
 | 증거 기반 문서 작성 지침 | 구현 완료 | 저장소 검증 | `e421009` | [SKILL.md](../skills/maintain-project-docs/SKILL.md), [EVIDENCE_MODEL.md](../skills/maintain-project-docs/references/EVIDENCE_MODEL.md) | 에이전트가 실제로 모든 주장을 올바르게 분류하는지는 작업별 리뷰 필요 |
 | 비파괴 설치기 | 구현 완료 | 저장소 검증 | `e421009`, 로컬 테스트 | [install-project-docs.mjs](../skills/maintain-project-docs/scripts/install-project-docs.mjs) | 사용자 정의 파일과의 의미적 병합은 자동화하지 않음 |
 | 문서 검증기 | 구현 완료 | 저장소 검증 | `e421009`, 로컬 테스트 | [validate-project-docs.mjs](../skills/maintain-project-docs/scripts/validate-project-docs.mjs) | 모든 비밀값 형식을 완전 탐지하는 DLP 도구는 아님 |
-| Notion Markdown 발행기 | 구현 완료 | stub 기반 저장소 검증 | `e421009`, Node 테스트 | [sync-project-docs-to-notion.mjs](../skills/maintain-project-docs/scripts/sync-project-docs-to-notion.mjs) | 실제 API 권한·네트워크 조합은 이번 세션 미검증 |
-| Setup Wizard | 구현 완료 | stub 기반 저장소 검증 | `e421009`, Node 테스트 | [setup-project-docs.mjs](../skills/maintain-project-docs/scripts/setup-project-docs.mjs) | 브라우저와 실제 GitHub/Notion E2E 미실행 |
-| 정책 기반 GitHub Actions | 구현 완료 | 구성 검증 | `e421009` | [workflow template](../skills/maintain-project-docs/assets/project-docs-notion.workflow.yml) | 대상 저장소의 branch/environment 정책 오구성 가능 |
+| Notion Markdown 발행기 | 구현 완료 | 저장소 테스트 + 실제 수동 발행 | `9c3fefa`, Node 테스트, [Actions 실행](https://github.com/Yeon-sik/notion-project-docs/actions/runs/30657348898) | [sync-project-docs-to-notion.mjs](../skills/maintain-project-docs/scripts/sync-project-docs-to-notion.mjs), Notion read-back | 현재 계정·페이지 조합 외 권한·네트워크 조합은 미검증 |
+| Setup Wizard | 구현 완료 | stub 기반 저장소 검증 + 기존 원격 구성 확인 | `9c3fefa`, Node 테스트, `notion-production` 구성 메타데이터 | [setup-project-docs.mjs](../skills/maintain-project-docs/scripts/setup-project-docs.mjs) | 최신 `--target` 흐름의 브라우저 최초 연결 E2E는 미실행 |
+| 정책 기반 GitHub Actions | 구현 완료 | 실제 validate·승인·publish 검증 | `9c3fefa`, [validate](https://github.com/Yeon-sik/notion-project-docs/actions/runs/30657316182), [publish](https://github.com/Yeon-sik/notion-project-docs/actions/runs/30657348898) | [workflow template](../skills/maintain-project-docs/assets/project-docs-notion.workflow.yml) | 다른 저장소의 branch/environment 정책은 별도 확인 필요 |
 | universal Plugins Directory 배포 | 미제출 | 미검증 | 2026-08-01 | [README](../README.md) | 설치 발견성과 공식 배포 검증 미확보 |
 
 ## 5. 시스템 아키텍처
@@ -201,9 +201,9 @@
 
 | 연동 대상 | 목적 | 인증/비밀값 | 실패 처리 | 재시도/제한 | 이번 세션 실환경 확인 |
 | --- | --- | --- | --- | --- | --- |
-| Notion API | 부모 확인, 미러 페이지 준비, Markdown 조회·교체 | integration token | 오류 본문을 안전하게 제한해 보고, preflight 실패 시 무쓰기 | 요청 재시도와 동일 revision 재실행 | 미실행 |
-| GitHub API/CLI | 저장소 식별, Environment 정책, secret 저장, remote tip 확인 | GitHub CLI 인증 | 인증 만료 시 브라우저 device flow, reviewer 요금제 422만 제한적 fallback | 인증 5분 timeout, 다른 오류는 숨기지 않음 | git clone/push만 별도 수행, Environment 구성 미실행 |
-| Git | 추적 상태, branch, commit snapshot, remote 일치 확인 | 저장소 권한 | dirty/non-canonical/diverged 상태에서 최초 발행 중단 | 상태 정리 후 다시 실행 | 기준 commit clone 확인 |
+| Notion API | 부모 확인, 미러 페이지 준비, Markdown 조회·교체 | integration token | 오류 본문을 안전하게 제한해 보고, preflight 실패 시 무쓰기 | 요청 재시도와 동일 revision 재실행 | Actions에서 2개 페이지 교체 성공, connector read-back으로 제목·source commit·본문 확인 |
+| GitHub API/CLI | 저장소 식별, Environment 정책, secret 저장, remote tip 확인 | GitHub CLI 인증 | 인증 만료 시 브라우저 device flow, reviewer 요금제 422만 제한적 fallback | 인증 5분 timeout, 다른 오류는 숨기지 않음 | Environment 메타데이터·secret 이름 확인, validate·publish dispatch와 보호 환경 승인 성공 |
+| Git | 추적 상태, branch, commit snapshot, remote 일치 확인 | 저장소 권한 | dirty/non-canonical/diverged 상태에서 최초 발행 중단 | 상태 정리 후 다시 실행 | `main`의 `9c3fefa`를 source commit으로 발행 확인 |
 | 로컬 브라우저 | loopback Setup Wizard 표시 | 브라우저에는 token 존재 여부만 전달 | origin 불일치 거부, 성공 또는 timeout 후 종료 | 사용자가 재실행 | 미실행 |
 
 ## 9. 데이터 보호와 보안
@@ -219,7 +219,7 @@
 
 ### 위협과 대응
 
-- 잘못된 페이지 ID로 수동 문서 덮어쓰기 → parent·title·page ID·완전한 Markdown을 사전 확인 → 실제 권한 조합 E2E는 별도 필요
+- 잘못된 페이지 ID로 수동 문서 덮어쓰기 → parent·title·page ID·완전한 Markdown을 사전 확인 → 현재 구성은 발행 후 제목·source commit·본문 read-back으로 확인, 다른 권한 조합은 별도 필요
 - source SHA와 실제 본문 불일치 → Git 객체 snapshot 렌더 + 쓰기 직전 remote tip 재검증
 - 브라우저 또는 명령 기록으로 token 노출 → token 본문 미삽입 + stdin secret 전달 + browser storage 미사용
 - 요금제 제한을 일반 오류처럼 무시 → required reviewer 관련 특정 422만 branch-policy fallback, 다른 오류는 중단
@@ -229,21 +229,23 @@
 | 수준 | 도구 | 검증 대상 | 현재 상태 |
 | --- | --- | --- | --- |
 | 배포 구성 검사 | Node.js 스크립트 | 필수 파일, manifest, workflow gate, Unicode, 사용자 경로 | 필수 배포 파일 29개 확인 통과 |
-| 단위 테스트 | `node:test` | config/path 불변식, 링크 렌더, page ID, 상태 파일 | 포함된 전체 테스트와 함께 44/44 통과 |
-| 통합 테스트 | `node:test` + stubbed fetch/CLI | 설치 idempotency, 전체 preflight, setup, 초기 발행, 인증 fallback | 포함된 전체 테스트와 함께 44/44 통과, 실제 외부 서비스 미사용 |
+| 단위 테스트 | `node:test` | config/path 불변식, 링크 렌더, page ID, 상태 파일 | 포함된 전체 테스트와 함께 45/45 통과 |
+| 통합 테스트 | `node:test` + stubbed fetch/CLI | 설치 idempotency, 전체 preflight, setup, 초기 발행, 인증 fallback | 포함된 전체 테스트와 함께 45/45 통과 |
 | 문서 검사 | 내장 project-docs validator | 신규 문서의 구조, placeholder, 링크, 로컬 경로, credential 후보 | 문서 2개, 오류 0·경고 0 |
-| CI | GitHub Actions | Ubuntu 24.04 + Node 22.18에서 `npm run check` | workflow 구성 확인, 이번 문서 commit 결과는 push 후 확인 필요 |
-| E2E | 실제 GitHub/Notion | setup → initial publish → rerun → recovery | 이번 세션 미실행 |
+| Project-docs workflow | GitHub Actions | canonical `main` 검증, 보호 환경 승인, Notion 발행 | validate와 publish 실행 성공 |
+| 운영 E2E | 실제 GitHub/Notion | validate → 승인 → manual publish → read-back | 현재 저장소에서 성공, Setup Wizard 최초 연결·동일 revision 재실행·부분 실패 복구는 미실행 |
 
 ### 검증 이력
 
 | 일시 | 기준 | 명령/환경 | 결과 | 근거 위치 | 미검증 항목 |
 | --- | --- | --- | --- | --- | --- |
-| 2026-08-01 | `e421009` + docs-only 작업 트리 | `npm.cmd run check`, Windows, Node 22.18+ | 통과: 배포 파일 29개, 테스트 44/44 | 로컬 명령 출력 | 실제 GitHub Actions, Notion API |
+| 2026-08-01 | `9c3fefa` + docs-only 작업 트리 | `npm.cmd run check`, Windows, Node 22.18+ | 통과: 배포 파일 29개, 테스트 45/45 | 로컬 명령 출력 | 다른 OS의 로컬 실행 |
 | 2026-08-01 | docs-only 작업 트리 | `node skills/maintain-project-docs/scripts/validate-project-docs.mjs docs/Project_Intro.md docs/Project_Detail.md` | 통과: 오류 0, 경고 0 | 로컬 명령 출력 | Notion 렌더 시각 결과 |
 | 2026-08-01 | docs-only 작업 트리 | `git diff --check` | 통과, 공백 오류 없음 | 로컬 명령 출력 | 플랫폼별 line ending 변환 여부 |
+| 2026-08-01 | `9c3fefa` | [GitHub Actions validate](https://github.com/Yeon-sik/notion-project-docs/actions/runs/30657316182) | 성공 | Actions run | Setup Wizard 최초 연결 |
+| 2026-08-01 | `9c3fefa` | [GitHub Actions manual publish](https://github.com/Yeon-sik/notion-project-docs/actions/runs/30657348898) + Notion read-back | 성공: 2개 페이지 동기화, 제목·source commit·본문 확인 | Actions log와 연결된 Notion workspace | 동일 revision 재실행과 부분 실패 복구 |
 
-테스트 통과는 저장소 구현 경계를 검증할 뿐 실제 Notion 페이지가 모든 계정·요금제·권한 조합에서 갱신된다는 뜻은 아니다.
+실제 수동 발행 성공은 현재 저장소·계정·페이지·보호 환경 조합을 검증한다. 모든 계정·요금제·권한 조합이나 Setup Wizard·복구 경로까지 일반화하지 않는다.
 
 ## 11. 배포·운영·복구
 
@@ -285,12 +287,12 @@
 
 | 우선순위 | 항목 | 사용자/운영 영향 | 다음 행동 |
 | --- | --- | --- | --- |
-| P1 | 실제 GitHub·Notion E2E 증거 부족 | 권한·요금제·API 변화가 stub 테스트 밖에서 실패할 수 있음 | 폐기 가능한 저장소·Notion parent에서 전체 setup/publish/recovery 실행을 기록 |
+| P1 | Setup Wizard·재실행·복구 E2E 증거 부족 | 수동 발행 외 경로는 권한·요금제·API 변화가 stub 테스트 밖에서 실패할 수 있음 | 폐기 가능한 저장소·Notion parent에서 최초 setup, 동일 revision 재실행, 부분 실패 복구를 기록 |
 | P1 | Notion 다중 페이지 비원자성 | 중간 장애 시 일시적으로 서로 다른 revision 노출 가능 | 동일 SHA 자동 재실행 절차와 partial failure 경보를 실제 workflow에서 검증 |
 | P2 | universal Plugins Directory 미제출 | 설치 발견성과 공식 검증 상태 제한 | 공식 plugin/skill validator를 재실행하고 제출 체크리스트 완료 |
 | P2 | 정규식 기반 공개 안전성 검사 | 알려지지 않은 비밀값 형식은 놓칠 수 있음 | 실제 유출 사례가 확인될 때 탐지 규칙과 테스트 fixture 추가 |
 
-지금 해야 할 한 가지는 실제 외부 서비스 E2E를 고정된 테스트 시나리오로 실행해 저장소 검증과 운영 검증 사이의 가장 큰 불확실성을 줄이는 것이다.
+지금 해야 할 한 가지는 폐기 가능한 대상에서 최신 `--target` Setup Wizard 최초 연결과 동일 revision 복구 시나리오를 실행해 남은 운영 불확실성을 줄이는 것이다.
 
 ## 14. 배운 점과 재설계 방향
 

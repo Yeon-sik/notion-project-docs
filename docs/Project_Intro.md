@@ -70,20 +70,20 @@
 
 | 검증 항목 | 상태 | 마지막 확인 | 근거와 경계 |
 | --- | --- | --- | --- |
-| 배포 구성·단위·통합 테스트 | 통과 | 2026-08-01 | `npm.cmd run check`: 필수 배포 파일 29개 확인, 테스트 44/44 통과, 로컬 Windows |
+| 배포 구성·단위·통합 테스트 | 통과 | 2026-08-01 | `npm.cmd run check`: 필수 배포 파일 29개 확인, 테스트 45/45 통과, 로컬 Windows |
 | Git 공백 오류 검사 | 통과 | 2026-08-01 | `git diff --check`, 로컬 작업 트리 |
 | 프로젝트 문서 검사 | 통과 | 2026-08-01 | 스킬의 validator로 신규 문서 2개 검사, 오류 0·경고 0 |
-| GitHub Actions 구성 | 저장소 확인 | 2026-08-01 | [ci.yml](../.github/workflows/ci.yml), 실제 이번 커밋 CI 결과는 push 이후 별도 확인 필요 |
-| 실제 Notion 발행 | 미실행 | 2026-08-01 | 이번 작업은 문서 작성 범위이며 토큰·페이지를 사용하지 않음 |
-| 실제 GitHub Environment 구성 | 미실행 | 2026-08-01 | stub 기반 테스트만 실행, 원격 설정 변경 없음 |
+| GitHub Actions 문서 검증 | 통과 | 2026-08-01 | [`project-docs-notion.yml` validate 실행](https://github.com/Yeon-sik/notion-project-docs/actions/runs/30657316182) 성공 |
+| 실제 Notion 발행 | 통과 | 2026-08-01 | [`main`의 `9c3fefa` 수동 발행](https://github.com/Yeon-sik/notion-project-docs/actions/runs/30657348898)에서 2개 페이지 동기화, 이후 Notion read-back으로 제목·source commit·본문 확인 |
+| 실제 GitHub Environment 구성 | 확인 | 2026-08-01 | `notion-production` 보호 환경의 승인자·canonical branch 정책과 필수 secret 이름 확인, 값은 조회·기록하지 않음 |
 | universal Plugins Directory 등록 | 미제출 | 2026-08-01 | 공개 GitHub 저장소 배포와 디렉터리 등록을 구분 |
 
 검증 명령과 남은 실환경 공백은 [Project Detail](./Project_Detail.md#10-테스트와-검증-전략)에 기록했다.
 
 ## 7. 현재 한계와 다음 단계
 
-- **현재 한계**: Notion은 다중 페이지 원자적 트랜잭션을 제공하지 않으며, 이번 검증은 stub 응답 기반이라 실제 권한·네트워크·GitHub 요금제 조합까지 증명하지 않는다.
-- **다음 한 단계**: 폐기 가능한 테스트 저장소와 Notion 상위 페이지에서 `설치 → 최초 발행 → 동일 revision 재실행 → 수동 복구 발행` E2E를 수행하고 실행 링크와 결과를 고정한다.
+- **현재 한계**: 현재 저장소·계정 조합의 수동 발행과 read-back은 확인했지만, Notion은 다중 페이지 원자적 트랜잭션을 제공하지 않으며 Setup Wizard 최초 연결·부분 실패 복구·다른 권한 조합은 아직 실환경 검증하지 않았다.
+- **다음 한 단계**: 폐기 가능한 테스트 저장소와 Notion 상위 페이지에서 `Setup Wizard 최초 연결 → 동일 revision 재실행 → 부분 실패 후 수동 복구 발행` E2E를 수행하고 실행 링크와 결과를 고정한다.
 - **하지 않는 것**: Notion을 협업 원본으로 만들거나, 사용자 토큰을 플러그인 서버·저장소·브라우저 저장소에 보관하지 않는다.
 
 ## 8. 관련 문서
