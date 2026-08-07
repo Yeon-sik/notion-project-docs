@@ -6,7 +6,7 @@
 | --- | --- |
 | 프로젝트 형태 | 공개 Codex 플러그인, Node.js CLI, GitHub Actions 템플릿 |
 | 현재 상태 | v0.2.0 공개 저장소 배포, universal Plugins Directory 미제출 |
-| 문서 기준 | [`9c3fefae228120d5ab157e1d1c44208773fa0beb`](https://github.com/Yeon-sik/notion-project-docs/tree/9c3fefae228120d5ab157e1d1c44208773fa0beb) |
+| 문서 기준 | [`a2371f08e14630122488e493cfa56a650753d769`](https://github.com/Yeon-sik/notion-project-docs/tree/a2371f08e14630122488e493cfa56a650753d769) |
 | 주요 기술 | Codex Skills, Node.js ESM, GitHub Actions, Notion API, JSON Schema |
 | 실행 조건 | Node.js 22.18 이상, 서드파티 런타임 의존성 없음 |
 | Repository | [Yeon-sik/notion-project-docs](https://github.com/Yeon-sik/notion-project-docs) |
@@ -70,9 +70,9 @@
 
 | 검증 항목 | 상태 | 마지막 확인 | 근거와 경계 |
 | --- | --- | --- | --- |
-| 배포 구성·단위·통합 테스트 | 통과 | 2026-08-01 | `npm.cmd run check`: 필수 배포 파일 29개 확인, 테스트 45/45 통과, 로컬 Windows |
-| Git 공백 오류 검사 | 통과 | 2026-08-01 | `git diff --check`, 로컬 작업 트리 |
-| 프로젝트 문서 검사 | 통과 | 2026-08-01 | 스킬의 validator로 신규 문서 2개 검사, 오류 0·경고 0 |
+| 배포 구성·단위·통합 테스트 | 통과 | 2026-08-08 | `npm.cmd run check`: 필수 배포 파일 29개 확인, 테스트 46/46 통과, 로컬 Windows |
+| Git 공백 오류 검사 | 통과 | 2026-08-08 | `git diff --check`, 로컬 작업 트리 |
+| 프로젝트 문서 검사 | 통과 | 2026-08-08 | 스킬의 validator로 문서 2개 검사, 오류 0·경고 0; render-only dry run 통과 |
 | GitHub Actions 문서 검증 | 통과 | 2026-08-01 | [`project-docs-notion.yml` validate 실행](https://github.com/Yeon-sik/notion-project-docs/actions/runs/30657316182) 성공 |
 | 실제 Notion 발행 | 통과 | 2026-08-01 | [`main`의 `9c3fefa` 수동 발행](https://github.com/Yeon-sik/notion-project-docs/actions/runs/30657348898)에서 2개 페이지 동기화, 이후 Notion read-back으로 제목·source commit·본문 확인 |
 | 실제 GitHub Environment 구성 | 확인 | 2026-08-01 | `notion-production` 보호 환경의 승인자·canonical branch 정책과 필수 secret 이름 확인, 값은 조회·기록하지 않음 |
