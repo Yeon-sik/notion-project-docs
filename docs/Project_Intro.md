@@ -6,7 +6,7 @@
 | --- | --- |
 | 프로젝트 형태 | 공개 Codex 플러그인, Node.js CLI, GitHub Actions 템플릿 |
 | 현재 상태 | v0.2.0 공개 저장소 배포, universal Plugins Directory 미제출 |
-| 문서 기준 | [`a2371f08e14630122488e493cfa56a650753d769`](https://github.com/Yeon-sik/notion-project-docs/tree/a2371f08e14630122488e493cfa56a650753d769) |
+| 구현 기준 | [`a2371f08e14630122488e493cfa56a650753d769`](https://github.com/Yeon-sik/notion-project-docs/tree/a2371f08e14630122488e493cfa56a650753d769) |
 | 주요 기술 | Codex Skills, Node.js ESM, GitHub Actions, Notion API, JSON Schema |
 | 실행 조건 | Node.js 22.18 이상, 서드파티 런타임 의존성 없음 |
 | Repository | [Yeon-sik/notion-project-docs](https://github.com/Yeon-sik/notion-project-docs) |
@@ -18,7 +18,7 @@
 
 - **문제**: 프로젝트 문서는 코드와 멀어지기 쉽고, Notion을 별도 원본처럼 직접 수정하면 검토 이력과 실제 구현 근거가 분리된다.
 - **해결**: Git Markdown을 단일 진실 원천으로 두고, Codex가 증거 경계를 지켜 문서를 작성하도록 안내한다. 설치된 검증기와 GitHub Actions는 구조·링크·비밀값을 검사하고 승인된 문서만 Notion 전용 페이지에 반영한다.
-- **핵심 결과**: 비파괴 설치기, 한국어·영어 템플릿, 로컬 Setup Wizard, 정책 기반 CI, 전체 페이지 사전 점검과 source fingerprint를 포함한 재실행 가능한 발행 흐름이 구현되어 있다.
+- **핵심 결과**: 비파괴 설치기, 한국어·영어 템플릿, 로컬 Setup Wizard, 정책 기반 CI, 전체 페이지 사전 점검과 source fingerprint를 포함한 재실행 가능한 발행 흐름이 구현되어 있다. Setup Wizard는 수동 발행에만 reviewer 보호를 요청하고, 자동 발행에는 canonical branch 정책만 적용한다.
 - **기술적 차별점**: 플러그인 백엔드나 프록시 서버를 운영하지 않는다. 대상 저장소에 검토된 런타임을 고정해 설치하고, 기본값은 수동 발행으로 유지한다.
 
 ## 2. 문제와 해결
@@ -38,7 +38,7 @@
 | 저장소 설치 | 쓰기 없는 계획을 먼저 출력하고, 충돌이 하나라도 있으면 적용 전에 중단 | [install-project-docs.mjs](../skills/maintain-project-docs/scripts/install-project-docs.mjs) |
 | 문서 검증 | 필수 섹션, placeholder, 상대 링크, 로컬 경로, 일반적인 credential 패턴, Git 추적 상태 검사 | [validate-project-docs.mjs](../skills/maintain-project-docs/scripts/validate-project-docs.mjs) |
 | Notion 발행 | 모든 대상 페이지를 먼저 읽고, 동일 내용은 건너뛰며, 변경 페이지를 교체한 뒤 fingerprint와 응답을 확인 | [sync-project-docs-to-notion.mjs](../skills/maintain-project-docs/scripts/sync-project-docs-to-notion.mjs) |
-| 초기 연결 | loopback 전용 Wizard가 전용 페이지와 GitHub Environment를 구성하고, 선택 시 검증된 Git 객체에서 최초 본문 발행 | [setup-project-docs.mjs](../skills/maintain-project-docs/scripts/setup-project-docs.mjs), [initial-publisher.mjs](../skills/maintain-project-docs/scripts/setup/initial-publisher.mjs) |
+| 초기 연결 | loopback 전용 Wizard가 전용 페이지와 GitHub Environment를 구성하고, 발행 모드에 맞는 보호 정책을 적용하며, 선택 시 검증된 Git 객체에서 최초 본문 발행 | [setup-project-docs.mjs](../skills/maintain-project-docs/scripts/setup-project-docs.mjs), [github-provisioner.mjs](../skills/maintain-project-docs/scripts/setup/github-provisioner.mjs), [initial-publisher.mjs](../skills/maintain-project-docs/scripts/setup/initial-publisher.mjs) |
 | 회귀 방지 | 설치·설정·발행·재시도·인증 복구·초기 발행 경계를 Node 내장 테스트로 검증 | [테스트 모음](../skills/maintain-project-docs/scripts/) |
 
 ## 4. 핵심 사용자 흐름
@@ -70,9 +70,10 @@
 
 | 검증 항목 | 상태 | 마지막 확인 | 근거와 경계 |
 | --- | --- | --- | --- |
-| 배포 구성·단위·통합 테스트 | 통과 | 2026-08-08 | `npm.cmd run check`: 필수 배포 파일 29개 확인, 테스트 46/46 통과, 로컬 Windows |
-| Git 공백 오류 검사 | 통과 | 2026-08-08 | `git diff --check`, 로컬 작업 트리 |
-| 프로젝트 문서 검사 | 통과 | 2026-08-08 | 스킬의 validator로 문서 2개 검사, 오류 0·경고 0; render-only dry run 통과 |
+| 배포 구성·단위·통합 테스트 | 통과 | 2026-08-08 | `a2371f0` 기준 `npm.cmd run check`: 필수 배포 파일 29개 확인, 테스트 46/46 통과, 로컬 Windows |
+| Git 공백 오류 검사 | 통과 | 2026-08-08 | `git diff --check`, 문서 전용 작업 트리 |
+| 프로젝트 문서 검사 | 통과 | 2026-08-08 | 설치된 validator와 render-only 발행기로 문서 2개 검사, 오류 0·경고 0 |
+| 자동 발행 Environment 정책 | 저장소 검증 | 2026-08-08 | `on-main-push`가 reviewer 관련 필드를 모두 생략하고 canonical branch 정책만 전송하는 회귀 테스트 통과 |
 | GitHub Actions 문서 검증 | 통과 | 2026-08-01 | [`project-docs-notion.yml` validate 실행](https://github.com/Yeon-sik/notion-project-docs/actions/runs/30657316182) 성공 |
 | 실제 Notion 발행 | 통과 | 2026-08-01 | [`main`의 `9c3fefa` 수동 발행](https://github.com/Yeon-sik/notion-project-docs/actions/runs/30657348898)에서 2개 페이지 동기화, 이후 Notion read-back으로 제목·source commit·본문 확인 |
 | 실제 GitHub Environment 구성 | 확인 | 2026-08-01 | `notion-production` 보호 환경의 승인자·canonical branch 정책과 필수 secret 이름 확인, 값은 조회·기록하지 않음 |
@@ -82,8 +83,8 @@
 
 ## 7. 현재 한계와 다음 단계
 
-- **현재 한계**: 현재 저장소·계정 조합의 수동 발행과 read-back은 확인했지만, Notion은 다중 페이지 원자적 트랜잭션을 제공하지 않으며 Setup Wizard 최초 연결·부분 실패 복구·다른 권한 조합은 아직 실환경 검증하지 않았다.
-- **다음 한 단계**: 폐기 가능한 테스트 저장소와 Notion 상위 페이지에서 `Setup Wizard 최초 연결 → 동일 revision 재실행 → 부분 실패 후 수동 복구 발행` E2E를 수행하고 실행 링크와 결과를 고정한다.
+- **현재 한계**: 현재 저장소·계정 조합의 수동 발행과 read-back은 확인했지만, Notion은 다중 페이지 원자적 트랜잭션을 제공하지 않는다. Setup Wizard 최초 연결, `on-main-push` Environment 구성, 부분 실패 복구와 다른 권한 조합은 최신 구현 기준의 실환경 검증이 남아 있다.
+- **다음 한 단계**: 폐기 가능한 테스트 저장소와 Notion 상위 페이지에서 `Setup Wizard 최초 연결 → on-main-push 병합 발행 → 동일 revision 재실행 → 부분 실패 후 수동 복구 발행` E2E를 수행하고 실행 링크와 결과를 고정한다.
 - **하지 않는 것**: Notion을 협업 원본으로 만들거나, 사용자 토큰을 플러그인 서버·저장소·브라우저 저장소에 보관하지 않는다.
 
 ## 8. 관련 문서

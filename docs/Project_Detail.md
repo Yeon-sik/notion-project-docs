@@ -5,8 +5,8 @@
 | 항목 | 내용 |
 | --- | --- |
 | 문서 상태 | Active |
-| 적용 범위 | v0.2.0, `main`의 기준 구현 커밋 |
-| 최종 갱신 | 2026-08-08T02:28:32+09:00 |
+| 적용 범위 | v0.2.0, `main`의 구현 커밋 `a2371f0` |
+| 최종 갱신 | 2026-08-08T02:30:13+09:00 |
 | 최종 구현 기준 | [`a2371f08e14630122488e493cfa56a650753d769`](https://github.com/Yeon-sik/notion-project-docs/tree/a2371f08e14630122488e493cfa56a650753d769) |
 | 문서 진실 원천 | Git 저장소의 `docs/Project_Detail.md` |
 | 공개 상태 | GitHub 공개 저장소, universal Plugins Directory 미제출 |
@@ -30,7 +30,7 @@
 - 실제 토큰·page map 값과 미러 페이지 밖의 비공개 Notion 콘텐츠
 - universal Plugins Directory 심사·배포 결과
 
-이 문서의 구현 주장은 기준 커밋의 추적 파일, 로컬 검사, 연결된 GitHub Actions 실행과 Notion read-back 결과에 한정한다. 현재 저장소의 수동 발행 경로는 실환경 확인했지만 Setup Wizard 최초 연결, 동일 revision 재실행, 부분 실패 복구와 다른 권한 조합은 별도 검증 항목으로 남긴다.
+이 문서의 구현 주장은 `a2371f0`의 추적 파일과 2026-08-08 로컬 검사에 한정한다. 실환경 주장은 별도로 연결한 `9c3fefa`의 GitHub Actions 실행과 Notion read-back 결과에만 적용한다. 현재 저장소의 수동 발행 경로는 실환경 확인했지만 Setup Wizard 최초 연결, `on-main-push` Environment 구성, 동일 revision 재실행, 부분 실패 복구와 다른 권한 조합은 별도 검증 항목으로 남긴다.
 
 ## 2. 문제 맥락과 제약
 
@@ -45,6 +45,7 @@
 - 대상 저장소는 기존 문서와 워크플로를 보존해야 하며 설치기가 임의로 덮어쓰면 안 된다.
 - Notion API는 여러 페이지를 하나의 원자적 트랜잭션으로 교체하지 못한다.
 - GitHub 요금제에 따라 Environment required reviewer를 사용할 수 없는 경우가 있다.
+- `on-main-push` 환경에 reviewer·wait timer 규칙을 남기면 자동 발행이 다시 수동 승인에 묶일 수 있다.
 - Node.js 22.18 이상을 사용하며 서드파티 런타임 패키지 없이 동작해야 한다.
 
 ### 성공 기준
@@ -83,12 +84,12 @@
 | 기능 | 구현 상태 | 검증 수준 | 환경·기준 | 확인된 근거 | 남은 위험 |
 | --- | --- | --- | --- | --- | --- |
 | 증거 기반 문서 작성 지침 | 구현 완료 | 저장소 검증 | `a2371f0` | [SKILL.md](../skills/maintain-project-docs/SKILL.md), [EVIDENCE_MODEL.md](../skills/maintain-project-docs/references/EVIDENCE_MODEL.md) | 에이전트가 실제로 모든 주장을 올바르게 분류하는지는 작업별 리뷰 필요 |
-| 비파괴 설치기 | 구현 완료 | 저장소 검증 | `a2371f0`, 로컬 테스트 | [install-project-docs.mjs](../skills/maintain-project-docs/scripts/install-project-docs.mjs) | 사용자 정의 파일과의 의미적 병합은 자동화하지 않음 |
-| 문서 검증기 | 구현 완료 | 저장소 검증 | `a2371f0`, 로컬 테스트 | [validate-project-docs.mjs](../skills/maintain-project-docs/scripts/validate-project-docs.mjs) | 모든 비밀값 형식을 완전 탐지하는 DLP 도구는 아님 |
-| Notion Markdown 발행기 | 구현 완료 | 저장소 테스트 + 실제 수동 발행 | `a2371f0`, Node 테스트, [Actions 실행](https://github.com/Yeon-sik/notion-project-docs/actions/runs/30657348898) | [sync-project-docs-to-notion.mjs](../skills/maintain-project-docs/scripts/sync-project-docs-to-notion.mjs), Notion read-back | 현재 계정·페이지 조합 외 권한·네트워크 조합은 미검증 |
-| Setup Wizard | 구현 완료 | stub 기반 저장소 검증 + 기존 원격 구성 확인 | `a2371f0`, Node 테스트, `notion-production` 구성 메타데이터 | [setup-project-docs.mjs](../skills/maintain-project-docs/scripts/setup-project-docs.mjs) | 최신 `--target` 흐름의 브라우저 최초 연결 E2E는 미실행 |
-| 정책 기반 GitHub Actions | 구현 완료 | 실제 validate·승인·publish 검증 | `a2371f0`, [validate](https://github.com/Yeon-sik/notion-project-docs/actions/runs/30657316182), [publish](https://github.com/Yeon-sik/notion-project-docs/actions/runs/30657348898) | [workflow template](../skills/maintain-project-docs/assets/project-docs-notion.workflow.yml) | 다른 저장소의 branch/environment 정책은 별도 확인 필요 |
-| universal Plugins Directory 배포 | 미제출 | 미검증 | 2026-08-01 | [README](../README.md) | 설치 발견성과 공식 배포 검증 미확보 |
+| 비파괴 설치기 | 구현 완료 | 저장소 검증 | `a2371f0`, 2026-08-08 로컬 테스트 | [install-project-docs.mjs](../skills/maintain-project-docs/scripts/install-project-docs.mjs) | 사용자 정의 파일과의 의미적 병합은 자동화하지 않음 |
+| 문서 검증기 | 구현 완료 | 저장소 검증 | `a2371f0`, 2026-08-08 로컬 테스트 | [validate-project-docs.mjs](../skills/maintain-project-docs/scripts/validate-project-docs.mjs) | 모든 비밀값 형식을 완전 탐지하는 DLP 도구는 아님 |
+| Notion Markdown 발행기 | 구현 완료 | 저장소 테스트 + 과거 실제 수동 발행 | `a2371f0` Node 테스트, [`9c3fefa` Actions 실행](https://github.com/Yeon-sik/notion-project-docs/actions/runs/30657348898) | [sync-project-docs-to-notion.mjs](../skills/maintain-project-docs/scripts/sync-project-docs-to-notion.mjs), Notion read-back | 현재 계정·페이지 조합 외 권한·네트워크 조합은 미검증 |
+| Setup Wizard | 구현 완료 | stub 기반 저장소 검증 + 기존 수동 원격 구성 확인 | `a2371f0`, 2026-08-08 Node 테스트, `notion-production` 구성 메타데이터 | [setup-project-docs.mjs](../skills/maintain-project-docs/scripts/setup-project-docs.mjs) | 최신 `--target` 최초 연결과 `on-main-push` Environment 구성 E2E는 미실행 |
+| 정책 기반 GitHub Actions | 구현 완료 | 저장소 테스트 + 과거 실제 validate·승인·publish | `a2371f0` 로컬 검사, [`9c3fefa` validate](https://github.com/Yeon-sik/notion-project-docs/actions/runs/30657316182), [`9c3fefa` publish](https://github.com/Yeon-sik/notion-project-docs/actions/runs/30657348898) | [workflow template](../skills/maintain-project-docs/assets/project-docs-notion.workflow.yml) | 다른 저장소의 branch/environment 정책은 별도 확인 필요 |
+| universal Plugins Directory 배포 | 미제출 | 미검증 | 2026-08-08 | [README](../README.md) | 설치 발견성과 공식 배포 검증 미확보 |
 
 ## 5. 시스템 아키텍처
 
@@ -120,7 +121,7 @@
 | Installer | 설정·템플릿·고정 런타임·workflow 설치 계획과 적용 | 파일 시스템 | 대상 저장소 자동화 미설치 또는 충돌 중단 |
 | Config loader | branch, publication mode, 문서 key/path/section 불변식 검증 | JSON 설정 | 검증·발행 시작 전 중단 |
 | Validator | Markdown 구조·링크·placeholder·경로·비밀값 후보 검사 | Git, 로컬 파일 | 잘못된 문서가 CI를 통과할 위험 |
-| Setup Wizard | loopback UI, Notion 페이지 준비, GitHub 환경 구성 조정 | 브라우저, GitHub CLI, Notion API | 초기 연결 중단, 본문 발행은 별도 경계로 유지 |
+| Setup Wizard | loopback UI, Notion 페이지 준비, `manual` reviewer 또는 `on-main-push` branch-only GitHub 환경 구성 | 브라우저, GitHub CLI, Notion API | 초기 연결 중단, 본문 발행은 별도 경계로 유지 |
 | Initial publisher | clean/tracked canonical source와 remote tip 확인, Git 객체 기반 최초 발행 | Git, GitHub, publisher | 조건 불일치 시 최초 본문 미발행 |
 | Publisher | 전체 페이지 preflight, 렌더, 교체, fingerprint 검증 | Notion API | 일부 실패 시 작업 실패 보고, 동일 SHA 재실행 필요 |
 | GitHub Actions | 검증과 발행 권한·시점 분리 | GitHub runner/environment | 잘못된 정책이면 발행 대기 또는 차단 |
@@ -152,7 +153,7 @@
 2. 하나의 Notion page ID를 여러 문서가 공유할 수 없다.
 3. 일반 검증과 render-only dry run은 Notion에 쓰지 않는다.
 4. `manual` 발행은 정확한 `PUBLISH` 입력과 canonical branch 조건을 요구한다.
-5. `on-main-push` 자동 발행은 설정된 canonical branch push에서만 가능하다.
+5. `on-main-push` 자동 발행은 설정된 canonical branch push에서만 가능하며, Environment 구성에는 reviewer·wait timer·self-review 필드를 보내지 않는다.
 6. 한 페이지라도 접근 불가·잘림·식별 불일치가 있으면 첫 쓰기 전에 전체 발행을 중단한다.
 7. 최초 발행은 clean/tracked 문서, canonical checkout, local HEAD와 remote canonical tip 일치를 요구하며 쓰기 직전에 다시 확인한다.
 8. 토큰과 page map은 Git, 브라우저 저장소, URL, 명령 인수에 기록하지 않는다.
@@ -180,7 +181,7 @@
 ### 결정 3. 수동 발행을 기본값으로 유지
 
 - **상황**: 문서 push가 즉시 외부 페이지를 덮어쓰면 검토되지 않은 정보가 공개될 수 있다.
-- **선택**: `manual` 기본값, exact `PUBLISH`, canonical branch, 가능한 경우 Environment reviewer를 요구한다. 자동 발행은 소유자가 `on-main-push`를 명시할 때만 활성화한다.
+- **선택**: `manual` 기본값, exact `PUBLISH`, canonical branch, 가능한 경우 Environment reviewer를 요구한다. 자동 발행은 소유자가 `on-main-push`를 명시할 때만 활성화하고, 해당 Environment에는 canonical branch 정책만 설정해 자동 job을 다시 승인 대기 상태로 만들지 않는다.
 - **결과**: 초기 설정 비용은 늘지만 외부 쓰기 권한과 문서 변경을 분리할 수 있다.
 - **재검토 조건**: 안정된 리뷰 프로세스와 자동 발행 요구가 확인된 저장소만 모드를 변경한다.
 
@@ -199,11 +200,11 @@
 
 ## 8. 외부 연동과 실패 경계
 
-| 연동 대상 | 목적 | 인증/비밀값 | 실패 처리 | 재시도/제한 | 이번 세션 실환경 확인 |
+| 연동 대상 | 목적 | 인증/비밀값 | 실패 처리 | 재시도/제한 | 확인된 근거와 경계 |
 | --- | --- | --- | --- | --- | --- |
 | Notion API | 부모 확인, 미러 페이지 준비, Markdown 조회·교체 | integration token | 오류 본문을 안전하게 제한해 보고, preflight 실패 시 무쓰기 | 요청 재시도와 동일 revision 재실행 | Actions에서 2개 페이지 교체 성공, connector read-back으로 제목·source commit·본문 확인 |
-| GitHub API/CLI | 저장소 식별, Environment 정책, secret 저장, remote tip 확인 | GitHub CLI 인증 | 인증 만료 시 브라우저 device flow, reviewer 요금제 422만 제한적 fallback | 인증 5분 timeout, 다른 오류는 숨기지 않음 | Environment 메타데이터·secret 이름 확인, validate·publish dispatch와 보호 환경 승인 성공 |
-| Git | 추적 상태, branch, commit snapshot, remote 일치 확인 | 저장소 권한 | dirty/non-canonical/diverged 상태에서 최초 발행 중단 | 상태 정리 후 다시 실행 | `main`의 `9c3fefa`를 source commit으로 발행 확인 |
+| GitHub API/CLI | 저장소 식별, Environment 정책, secret 저장, remote tip 확인 | GitHub CLI 인증 | 인증 만료 시 브라우저 device flow, reviewer 요금제 422만 제한적 fallback | 인증 5분 timeout, 다른 오류는 숨기지 않음 | `9c3fefa`에서 수동 Environment·validate·publish 확인. `a2371f0`의 `on-main-push` branch-only payload는 stub 테스트만 완료 |
+| Git | 추적 상태, branch, commit snapshot, remote 일치 확인 | 저장소 권한 | dirty/non-canonical/diverged 상태에서 최초 발행 중단 | 상태 정리 후 다시 실행 | `a2371f0`을 현재 구현 경계로 확인하고, `9c3fefa`를 source commit으로 한 실제 발행 이력 보존 |
 | 로컬 브라우저 | loopback Setup Wizard 표시 | 브라우저에는 token 존재 여부만 전달 | origin 불일치 거부, 성공 또는 timeout 후 종료 | 사용자가 재실행 | 미실행 |
 
 ## 9. 데이터 보호와 보안
@@ -230,7 +231,7 @@
 | --- | --- | --- | --- |
 | 배포 구성 검사 | Node.js 스크립트 | 필수 파일, manifest, workflow gate, Unicode, 사용자 경로 | 필수 배포 파일 29개 확인 통과 |
 | 단위 테스트 | `node:test` | config/path 불변식, 링크 렌더, page ID, 상태 파일 | 포함된 전체 테스트와 함께 46/46 통과 |
-| 통합 테스트 | `node:test` + stubbed fetch/CLI | 설치 idempotency, 전체 preflight, setup, 초기 발행, 인증 fallback, `on-main-push` 환경 정책 | 포함된 전체 테스트와 함께 46/46 통과 |
+| 통합 테스트 | `node:test` + stubbed fetch/CLI | 설치 idempotency, 전체 preflight, setup, 초기 발행, 인증 fallback, 발행 모드별 Environment payload | 포함된 전체 테스트와 함께 46/46 통과 |
 | 문서 검사 | 내장 project-docs validator | 신규 문서의 구조, placeholder, 링크, 로컬 경로, credential 후보 | 문서 2개, 오류 0·경고 0 |
 | Project-docs workflow | GitHub Actions | canonical `main` 검증, 보호 환경 승인, Notion 발행 | validate와 publish 실행 성공 |
 | 운영 E2E | 실제 GitHub/Notion | validate → 승인 → manual publish → read-back | 현재 저장소에서 성공, Setup Wizard 최초 연결·동일 revision 재실행·부분 실패 복구는 미실행 |
@@ -239,13 +240,11 @@
 
 | 일시 | 기준 | 명령/환경 | 결과 | 근거 위치 | 미검증 항목 |
 | --- | --- | --- | --- | --- | --- |
-| 2026-08-01 | `9c3fefa` + docs-only 작업 트리 | `npm.cmd run check`, Windows, Node 22.18+ | 통과: 배포 파일 29개, 테스트 45/45 | 로컬 명령 출력 | 다른 OS의 로컬 실행 |
-| 2026-08-01 | docs-only 작업 트리 | `node skills/maintain-project-docs/scripts/validate-project-docs.mjs docs/Project_Intro.md docs/Project_Detail.md` | 통과: 오류 0, 경고 0 | 로컬 명령 출력 | Notion 렌더 시각 결과 |
-| 2026-08-01 | docs-only 작업 트리 | `git diff --check` | 통과, 공백 오류 없음 | 로컬 명령 출력 | 플랫폼별 line ending 변환 여부 |
+| 2026-08-08 | `a2371f0` + docs-only 작업 트리 | `npm.cmd run check`, Windows, Node 22.18+ | 통과: 배포 파일 29개, 테스트 46/46 | 로컬 명령 출력 | 다른 OS의 로컬 실행 |
+| 2026-08-08 | `a2371f0` + docs-only 작업 트리 | 설치된 validator와 render-only publisher | 통과: 문서 2개, 오류 0, 경고 0 | 로컬 명령 출력 | Notion 렌더 시각 결과 |
+| 2026-08-08 | `a2371f0` + docs-only 작업 트리 | `git diff --check` | 통과, 공백 오류 없음 | 로컬 명령 출력 | 플랫폼별 line ending 변환 여부 |
 | 2026-08-01 | `9c3fefa` | [GitHub Actions validate](https://github.com/Yeon-sik/notion-project-docs/actions/runs/30657316182) | 성공 | Actions run | Setup Wizard 최초 연결 |
 | 2026-08-01 | `9c3fefa` | [GitHub Actions manual publish](https://github.com/Yeon-sik/notion-project-docs/actions/runs/30657348898) + Notion read-back | 성공: 2개 페이지 동기화, 제목·source commit·본문 확인 | Actions log와 연결된 Notion workspace | 동일 revision 재실행과 부분 실패 복구 |
-| 2026-08-08 | `a2371f0` + docs-only 작업 트리 | `npm.cmd run check`, Windows, Node 22.18+ | 통과: 배포 파일 29개, 테스트 46/46 | 로컬 명령 출력 | 다른 OS의 로컬 실행 |
-| 2026-08-08 | `a2371f0` + docs-only 작업 트리 | validator + render-only dry run | 통과: 오류 0, 경고 0; 문서 2개 렌더 검증 | 로컬 명령 출력 | 실제 Notion 쓰기 |
 
 실제 수동 발행 성공은 현재 저장소·계정·페이지·보호 환경 조합을 검증한다. 모든 계정·요금제·권한 조합이나 Setup Wizard·복구 경로까지 일반화하지 않는다.
 
@@ -271,6 +270,13 @@
 
 ## 12. 문제 해결 사례
 
+### 자동 발행 환경이 reviewer 보호에 묶이는 경우
+
+- **증상**: `on-main-push`로 구성했는데 Environment 설정이 요금제 422를 반환하거나 자동 발행 job이 다시 승인 대기 상태가 된다.
+- **원인**: 자동 모드에서도 `reviewers: []`, `wait_timer`, `prevent_self_review` 같은 수동 보호 필드를 전송하면 GitHub가 required-reviewer 규칙으로 해석할 수 있다.
+- **해결**: 자동 모드의 첫 Environment `PUT`에는 `deployment_branch_policy`만 보내고, 기존 custom branch policy를 canonical branch 하나로 수렴시킨다.
+- **회귀 방지**: [setup-project-docs.test.mjs](../skills/maintain-project-docs/scripts/setup-project-docs.test.mjs)가 정확한 payload, reviewer 필드 부재, 단일 `PUT`, canonical branch policy 교체를 함께 검사한다.
+
 ### GitHub 요금제가 required reviewer를 지원하지 않는 경우
 
 - **증상**: Setup Wizard가 Environment 보호 규칙 구성 중 plan-specific HTTP 422를 받는다.
@@ -290,11 +296,12 @@
 | 우선순위 | 항목 | 사용자/운영 영향 | 다음 행동 |
 | --- | --- | --- | --- |
 | P1 | Setup Wizard·재실행·복구 E2E 증거 부족 | 수동 발행 외 경로는 권한·요금제·API 변화가 stub 테스트 밖에서 실패할 수 있음 | 폐기 가능한 저장소·Notion parent에서 최초 setup, 동일 revision 재실행, 부분 실패 복구를 기록 |
+| P1 | `on-main-push` Environment 구성의 실환경 증거 부족 | branch-only payload는 테스트됐지만 실제 요금제·권한 조합에서 자동 발행까지 확인되지 않음 | 테스트 저장소에서 Setup Wizard 구성 후 canonical branch 병합과 무승인 자동 발행을 확인 |
 | P1 | Notion 다중 페이지 비원자성 | 중간 장애 시 일시적으로 서로 다른 revision 노출 가능 | 동일 SHA 자동 재실행 절차와 partial failure 경보를 실제 workflow에서 검증 |
 | P2 | universal Plugins Directory 미제출 | 설치 발견성과 공식 검증 상태 제한 | 공식 plugin/skill validator를 재실행하고 제출 체크리스트 완료 |
 | P2 | 정규식 기반 공개 안전성 검사 | 알려지지 않은 비밀값 형식은 놓칠 수 있음 | 실제 유출 사례가 확인될 때 탐지 규칙과 테스트 fixture 추가 |
 
-지금 해야 할 한 가지는 폐기 가능한 대상에서 최신 `--target` Setup Wizard 최초 연결과 동일 revision 복구 시나리오를 실행해 남은 운영 불확실성을 줄이는 것이다.
+지금 해야 할 한 가지는 폐기 가능한 대상에서 최신 `--target` Setup Wizard 최초 연결부터 `on-main-push` 병합 발행과 동일 revision 복구까지 한 번에 실행해 남은 운영 불확실성을 줄이는 것이다.
 
 ## 14. 배운 점과 재설계 방향
 
