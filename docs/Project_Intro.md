@@ -18,7 +18,13 @@
 - validator가 required section, tracked path, link, secret-like content를 검사하고 publish workflow가 승인된 Intro/Detail만 Notion 전용 페이지에 반영한다.
 - `a2371f0..454d245` 비교 결과 제품/플러그인 구현 변화 없이 Intro/Detail 문서만 갱신됐다.
 
-## 2. 핵심 기능과 결과
+## 2. 문제와 해결
+
+**문제**: 프로젝트 설명을 Notion에서 직접 따로 관리하면 코드 revision과 문서 근거가 쉽게 어긋나고, 테스트 존재·build 성공·runtime 검증 같은 서로 다른 증거 수준도 섞이기 쉽다.
+
+**해결**: Git Markdown을 단일 원본으로 두고 Codex skill이 source boundary와 evidence class를 명시하도록 한다. validator와 GitHub Actions가 구조·tracked source·link·secret 위험을 검사한 뒤 승인된 문서만 dedicated Notion mirror에 반영한다.
+
+## 3. 핵심 기능과 결과
 
 | 영역 | 현재 source에서 확인한 범위 |
 | --- | --- |
@@ -28,7 +34,7 @@
 | 안전 경계 | Git canonical, Notion generated mirror, source fingerprint와 immutable revision. |
 | 배포 형태 | Node.js ESM CLI/스크립트와 Codex skill, GitHub workflow template. |
 
-## 3. 핵심 불변식
+## 4. 핵심 불변식
 
 - 코드 존재 = runtime verified가 아니다.
 - 테스트 존재 = 테스트 통과가 아니다.
@@ -37,7 +43,7 @@
 - publication source SHA와 fingerprint를 명시해 어떤 revision이 게시됐는지 추적 가능해야 한다.
 - token·credential·private 원본 데이터는 문서와 mirror에 포함하지 않는다.
 
-## 4. 검증 현황
+## 5. 검증 현황
 
 | 항목 | 상태 | 근거와 한계 |
 | --- | --- | --- |
@@ -46,13 +52,13 @@
 | universal Plugins Directory | 미제출 | 공개 GitHub 저장소 상태와 directory 배포는 별도다. |
 | 실제 외부 저장소 publication | 프로젝트별 검증 | 각 소비 저장소의 secret/environment/Notion 권한과 workflow 성공 여부를 별도로 확인해야 한다. |
 
-## 5. 현재 한계와 다음 단계
+## 6. 현재 한계와 다음 단계
 
 - 자동화가 설치돼 있어도 각 저장소의 canonical docs 품질을 자동으로 보장하지 않는다.
 - Notion API/permission 변경과 workflow secret 구성은 소비 저장소별 운영 경계다.
 - 다음 우선 작업은 여러 실제 저장소에서 validator→render→publish→read-back 계약을 동일 revision으로 반복 검증하는 것이다.
 
-## 6. 관련 문서
+## 7. 관련 문서
 
 - [프로젝트 상세](./Project_Detail.md)
 - [Skill](../skills/maintain-project-docs/SKILL.md)
